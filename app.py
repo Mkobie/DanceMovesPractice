@@ -1,32 +1,46 @@
-import dash
-from dash import html, dcc, callback, Input, Output
-import dash_bootstrap_components as dbc
+import shutil
 from pathlib import Path
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+import dash
+import dash_bootstrap_components as dbc
+from dash import html, callback, Input, Output
 
-# Path to the assets folder
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
+
 assets_folder = Path.cwd() / 'assets'
+media_folder = Path.cwd() / 'media'
 
-# Get the list of all video files in the assets folder
+# todo: add moves from
+#  https://thebluesroom.com/courses/side-by-side/
+source_names = ["Basic Turns", "Ballroom Blues", "Ballroom Blues - turns", "Close Embrace Intensive", "Close Embrace - spin"]  # refers to source of video source on Blues Room site
+
+column_files = []
+for i, source_name in enumerate(source_names):
+    video_folder = media_folder.joinpath(source_name)
+    video_files = [f.name for f in video_folder.iterdir() if f.suffix in ['.mp4', '.webm', '.ogg']]
+    column_files.append(video_files)
+
+    for src_file in video_folder.glob('*.*'):
+        shutil.copy(src_file, assets_folder)
+
 video_files = [f.name for f in assets_folder.iterdir() if f.suffix in ['.mp4', '.webm', '.ogg']]
-
-basic_turn_videos = [f for f in video_files if "turn" in f]
-promenade_videos = [f for f in video_files if "Promenade" in f]
-
-column_names = ["Basic turns", "Promenade"]
-column_files = [basic_turn_videos, promenade_videos]
 
 
 def button_list(title, video_list):
     return dbc.Col([
-        html.H4(title, className="card-title"),
+        html.H6(title, className="card-title"),
         dbc.ButtonGroup([
-            dbc.Button(video, id={'type': 'video-button', 'index': f"{title}-{i}"}, color="primary",
+            dbc.Button(video[3:].replace('.mp4', ''), id={'type': 'video-button', 'index': f"{title}_{i}"}, color="secondary",
                        className="mb-2")
             for i, video in enumerate(video_list)
         ], vertical=True)
     ], className="h-100", width='auto')
+
+def generate_button_lists():
+    button_lists = []
+    for i, entry in enumerate(source_names):
+        button_lists.append(button_list(source_names[i], column_files[i]))
+    return button_lists
 
 
 # Layout of the app
@@ -45,14 +59,11 @@ app.layout = dbc.Container(
                             style={"width": "100%", "height": "auto"}
                         )
                     ])
-                ], className="mb-4"), width={"size": 6, "offset": 3},
+                ], className="mb-4"), width={"size": 5, "offset": 2},
             )
         ),
 
-        dbc.Row([
-                button_list(column_names[0], column_files[0]),
-                button_list(column_names[1], column_files[1]),
-        ])
+        dbc.Row(generate_button_lists())
     ], fluid=True)
 
 
@@ -73,13 +84,12 @@ def update_video(n_clicks):
     index = eval(button_id)['index']
 
     # Determine the video list and file index
-    prefix, idx = index.split('-')
+    prefix, idx = index.split('_')
     idx = int(idx)
 
-    if prefix == column_names[0]:
-        return f"/assets/{column_files[0][idx]}"
-    elif prefix == column_names[1]:
-        return f"/assets/{column_files[1][idx]}"
+    for i in range(20):
+        if prefix == source_names[i]:
+            return f"/assets/{column_files[i][idx]}"
 
     return dash.no_update
 
