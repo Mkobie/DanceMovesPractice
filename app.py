@@ -8,6 +8,7 @@ from DanceMove import DanceMoveCollection
 
 # todo: add moves from
 #  https://thebluesroom.com/courses/side-by-side/
+#   and add basic slow taps and quick quicks.
 
 grouping_titles = ["Basic turns", "Ballroom blues", "Ballroom blues - turns", "Close embrace", "Close embrace - spins"]
 assets_folder = Path.cwd() / 'assets'
@@ -16,22 +17,25 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 
 dance_moves = DanceMoveCollection()
 
-def button_group(title):
-    moves_for_group = [move for move in dance_moves.moves if move.grouping == title]
-    return dbc.Col([
-        html.H6(title, className="card-title"),
-        dbc.ButtonGroup([
-            dbc.Button(move.name, id={'type': 'video-button', 'index': f"{move.name}"}, color="secondary",
-                       className="mb-2")
-            for move in moves_for_group
-        ], vertical=True)
-    ], className="d-grid gap-2", width=12)
+def generate_move_button_row(move):
+    return html.Div([
+        dbc.Button(move.name, id={'type': 'move-button', 'index': f"{move.name}"}, color="secondary", className="flex-grow-1"),
+        dbc.Button("\U0001F855", id={'type': 'lesson-button', 'index': f"{move.name}"}, href=f"{move.lesson}", target="_blank", style={'display': 'none'}, color="secondary", className="flex-shrink-1"),
+        dbc.Checkbox(id={'type': 'move-checkbox', 'index': f"{move.name}"}, style={'margin-left': '10px'}),
+    ], className="d-flex align-items-center mb-1 ms-4")
 
-def generate_button_groups():
-    button_groups = []
-    for i, entry in enumerate(grouping_titles):
-        button_groups.append(button_group(grouping_titles[i]))
-    return button_groups
+def column_of_move_button_rows(title):
+    moves_for_column = [move for move in dance_moves.moves if move.grouping == title]
+    return html.Div([
+        html.Div([dbc.Checkbox(id={'type': 'group-checkbox', 'index': f"{title}"}), html.H6(title, className="card-title")], className="d-flex align-items-center mb-1"),
+        html.Div([generate_move_button_row(move) for move in moves_for_column])
+    ])
+
+def groups_of_moves():
+    groups = []
+    for title in grouping_titles:
+        groups.append(column_of_move_button_rows(title))
+    return html.Div(groups)
 
 app.layout = html.Div([
     html.Div([
@@ -51,9 +55,8 @@ app.layout = html.Div([
         ], style={'width': '65%', 'display': 'inline-block', 'vertical-align': 'top',
                   'padding': '20px', 'box-sizing': 'border-box'}),
 
-        html.Div([
-            dbc.Row(generate_button_groups()),
-        ], style={'width': '35%', 'display': 'inline-block', 'vertical-align': 'top',
+        html.Div([groups_of_moves()],
+                 style={'width': '35%', 'display': 'inline-block', 'vertical-align': 'top',
                   'padding': '20px', 'box-sizing': 'border-box',
                   'height': '100vh', 'overflow-y': 'scroll'}),
     ])
@@ -63,7 +66,7 @@ app.layout = html.Div([
 @callback(
 [Output("video-player", "src"),
      Output("current-video", "data")],
-    Input({'type': 'video-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
+    Input({'type': 'move-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
 def update_video(n_clicks):
@@ -78,15 +81,16 @@ def update_video(n_clicks):
 
 
 @app.callback(
-    Output({'type': 'video-button', 'index': dash.dependencies.ALL}, 'color'),
+    [
+        Output({'type': 'move-button', 'index': dash.dependencies.ALL}, 'color'),
+        Output({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'style'),
+    ],
     Input('current-video', 'data')
 )
-def update_button_colors(current_video):
-    # if not current_video:
-    #     return ['secondary'] * len(dance_moves.moves)  # Default color
-
-    return ['primary' if move.name == current_video else 'secondary' for move in dance_moves.moves]
-
+def update_button_row_formatting(current_video):
+    colors = ['primary' if move.name == current_video else 'secondary' for move in dance_moves.moves]
+    visibility = [{'display': 'block'} if move.name == current_video else {'display': 'none'} for move in dance_moves.moves]
+    return colors, visibility
 
 
 if __name__ == '__main__':
