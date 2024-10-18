@@ -32,7 +32,6 @@ class DanceMoveCollection:
         file_path = download_excel_from_gdrive()
         df = pd.read_excel(file_path)
 
-        # Create DanceMove objects for each row in the DataFrame and add to the moves list
         for index, row in df.iterrows():
             move = DanceMove(
                 name=row['Name'],
@@ -41,6 +40,9 @@ class DanceMoveCollection:
                 grouping=row['Grouping']
             )
             self.moves.append(move)
+
+    def get_grouping_from_name(self, name):
+        return [move.grouping for move in self.moves if move.name == name][0]
 
     def __repr__(self):
         return f"DanceMoveCollection(moves={self.moves})"
