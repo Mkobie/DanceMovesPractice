@@ -14,8 +14,10 @@ grouping_titles = ["Basic turns", "Ballroom blues", "Ballroom blues - turns", "C
 mixer_moves = {"all": grouping_titles,
                "some": ["Basic turns", "Ballroom blues", "Ballroom blues - turns"],
                "a few": ["Basic turns"]}
+bmp_limits = {"min": 30, "max": 300}
 
 assets_folder = Path.cwd() / 'assets'
+metronome_audio = "/assets/Perc_MetronomeQuartz_hi.wav"
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 
@@ -57,7 +59,7 @@ app.layout = html.Div([
             ),
             html.Div("Controls"),
             dbc.Row([
-                dbc.Col(
+                dbc.Col([
                     dbc.InputGroup(
                         [
                             dbc.InputGroupText("Mix me a practice session with"),
@@ -75,11 +77,17 @@ app.layout = html.Div([
                                     ],
                                 ),
                             dbc.InputGroupText("basics at"),
-                            dbc.Input(value=75, type="number", id="mixer-bpm"),
+                            dbc.Input(id="metronome-bpm-input", type="number", value=75, min=bmp_limits["min"], max=bmp_limits["max"], step=1, debounce=True),
                             dbc.InputGroupText("bpm"),
+                            dbc.Button("\U0000266a", id="metronome-button", color="secondary", )
                         ],
-                    ), width=9
-                ),
+                    ),
+                    dcc.Interval(id="metronome-interval", interval=600, n_intervals=0, disabled=True),
+                    html.Div(id="dummy", style={'display': 'none'}),
+                    html.Audio(id="metronome-sound", src=metronome_audio, controls=False,
+                               style={'display': 'none'}),
+                ], width=9),
+
                 dbc.Col(
                     dbc.Button("Let's go!", id="mixer-start", color="secondary")
                 ),
@@ -186,6 +194,62 @@ def update_mixer_moves_selection(n_clicks, group_checkbox_values, move_checkbox_
         selected_mixer_value = "custom"
 
     return selected_mixer_value, group_checkbox_new_values, move_checkbox_new_values, group_checkbox_new_values_dict, move_checkbox_new_values_dict
+
+
+@app.callback(
+    [
+        Output("metronome-interval", "interval"),
+        Output("metronome-interval", "disabled"),
+        Output("metronome-button", "children"),
+    ],
+    [
+        Input("metronome-button", "n_clicks"),
+        Input("metronome-bpm-input", "value")
+    ],
+    [
+        State("metronome-interval", "disabled")
+    ],
+    prevent_initial_call=True
+)
+def control_metronome(n_clicks, bpm, is_disabled):
+    ctx = dash.callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    metronome_interval = dash.no_update
+    metronome_disabled = dash.no_update
+    metronome_button_text = dash.no_update
+
+    if triggered_id == "metronome-button":
+        if is_disabled:
+            metronome_interval = 60000 / bpm
+            metronome_disabled = False
+            metronome_button_text = "\U0000266a..."
+        else:
+            metronome_disabled = True
+            metronome_button_text = "\U0000266a"
+
+    elif triggered_id == "metronome-bpm-input":
+        if not is_disabled:
+            metronome_interval = 60000 / bpm
+
+    return metronome_interval, metronome_disabled, metronome_button_text
+
+
+app.clientside_callback(
+    '''
+    function(n_intervals) {
+        const audioElement = document.querySelector('#metronome-sound');
+        if (audioElement) {
+            audioElement.currentTime = 0;  // Reset the audio to the beginning
+            audioElement.play();  // Play the sound on each interval tick
+        }
+        return null;
+    }
+    ''',
+    Output('dummy', 'children'),
+    Input('metronome-interval', 'n_intervals'),
+    prevent_initial_call=True
+)
 
 
 if __name__ == '__main__':
