@@ -15,6 +15,7 @@ mixer_moves = {"all": grouping_titles,
                "some": ["Basic turns", "Ballroom blues", "Ballroom blues - turns"],
                "a few": ["Basic turns"]}
 bmp_limits = {"min": 30, "max": 300}
+mixer_btn_names = {"start": "Let's go!", "stop": "Aaand stop!"}
 
 assets_folder = Path.cwd() / 'assets'
 metronome_audio = "/assets/Perc_MetronomeQuartz_hi.wav"
@@ -48,7 +49,6 @@ app.layout = html.Div([
 
         html.Div([
             html.H1("Blues Moves Practice"),
-            dcc.Store(id='current-video', data=dance_moves.moves[0].name),
             html.Video(
                 id="video-player",
                 src=f"/assets/{dance_moves.moves[0].name}.mp4",
@@ -57,7 +57,6 @@ app.layout = html.Div([
                 loop=True,
                 style={"width": "100%", "height": "auto"}
             ),
-            html.Div("Controls"),
             dbc.Row([
                 dbc.Col([
                     dbc.InputGroup(
@@ -86,16 +85,17 @@ app.layout = html.Div([
                     html.Div(id="dummy", style={'display': 'none'}),
                     html.Audio(id="metronome-sound", src=metronome_audio, controls=False,
                                style={'display': 'none'}),
-                ], width=9),
+                ], width=10),
 
                 dbc.Col(
-                    dbc.Button("Let's go!", id="mixer-start", color="secondary")
+                    dbc.Button(mixer_btn_names["start"], id="mixer-button", color="secondary")
                 ),
-            ])
+            ], className="mt-3")
         ], style={'width': '65%', 'display': 'inline-block', 'vertical-align': 'top',
                   'padding': '20px', 'box-sizing': 'border-box'}),
 
         html.Div([
+            dcc.Store(id="mixer-mode", data=False),
             dcc.Store(id='group-checkbox-store', data=dict(zip(grouping_titles, [False for title in grouping_titles]))),
             dcc.Store(id='move-checkbox-store', data=dict(zip([move.name for move in dance_moves.moves], [False for move in dance_moves.moves]))),
             groups_of_moves()
@@ -108,33 +108,30 @@ app.layout = html.Div([
 
 
 @callback(
-[Output("video-player", "src"),
-     Output("current-video", "data")],
-    Input({'type': 'move-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
+[
+        Output("video-player", "src"),
+        Output({'type': 'move-button', 'index': dash.dependencies.ALL}, 'color'),
+        Output({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'style'),
+    ],
+    [
+        Input({'type': 'move-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
+    ],
     prevent_initial_call=True
 )
-def update_video(n_clicks):
+def show_selected_move(n_clicks):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    move_name = eval(button_id)['index']
+    clicked_move_name = eval(button_id)['index']
 
-    return f"/assets/{move_name}.mp4", move_name
+    video_file = f"/assets/{clicked_move_name}.mp4"
+    button_colors = ['primary' if move.name == clicked_move_name else 'secondary' for move in dance_moves.moves]
+    href_visibility = [{'display': 'block'} if move.name == clicked_move_name else {'display': 'none'} for move in
+                  dance_moves.moves]
 
-
-@app.callback(
-    [
-        Output({'type': 'move-button', 'index': dash.dependencies.ALL}, 'color'),
-        Output({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'style'),
-    ],
-    Input('current-video', 'data')
-)
-def update_button_row_formatting(current_video):
-    colors = ['primary' if move.name == current_video else 'secondary' for move in dance_moves.moves]
-    visibility = [{'display': 'block'} if move.name == current_video else {'display': 'none'} for move in dance_moves.moves]
-    return colors, visibility
+    return video_file, button_colors, href_visibility
 
 
 @app.callback(
@@ -154,11 +151,10 @@ def update_button_row_formatting(current_video):
         State("mixer-moves", "label"),
         State("group-checkbox-store", "data"),
         State("move-checkbox-store", "data"),
-
     ],
     prevent_initial_call=True
 )
-def update_mixer_moves_selection(n_clicks, group_checkbox_values, move_checkbox_values, mixer_moves_label, group_checkbox_previous_values_dict, move_checkbox_previous_values_dict):
+def update_checkboxes_from_mixer_moves_selection(n_clicks, group_checkbox_values, move_checkbox_values, mixer_moves_label, group_checkbox_previous_values_dict, move_checkbox_previous_values_dict):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update
@@ -168,9 +164,9 @@ def update_mixer_moves_selection(n_clicks, group_checkbox_values, move_checkbox_
 
     selected_mixer_value = mixer_moves_label
     group_checkbox_new_values_dict = group_checkbox_previous_values_dict
-    group_checkbox_new_values = group_checkbox_previous_values_dict.values()
+    group_checkbox_new_values = list(group_checkbox_previous_values_dict.values())
     move_checkbox_new_values_dict = move_checkbox_previous_values_dict
-    move_checkbox_new_values = move_checkbox_previous_values_dict.values()
+    move_checkbox_new_values = list(move_checkbox_previous_values_dict.values())
 
     if input in mixer_moves.keys():
         selected_mixer_value = input
@@ -204,10 +200,10 @@ def update_mixer_moves_selection(n_clicks, group_checkbox_values, move_checkbox_
     ],
     [
         Input("metronome-button", "n_clicks"),
-        Input("metronome-bpm-input", "value")
+        Input("metronome-bpm-input", "value"),
     ],
     [
-        State("metronome-interval", "disabled")
+        State("metronome-interval", "disabled"),
     ],
     prevent_initial_call=True
 )
@@ -250,6 +246,39 @@ app.clientside_callback(
     Input('metronome-interval', 'n_intervals'),
     prevent_initial_call=True
 )
+
+@app.callback(
+    [
+        Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
+        Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
+        Output("mixer-moves", "disabled"),
+        Output("mixer-basics", "disabled"),
+        Output("metronome-button", "disabled"),
+    ],
+    [
+        Input("mixer-mode", "data"), 
+    ],
+    [
+        State({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'value'),
+        State({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'value'),
+    ],
+    prevent_initial_call=True
+)
+def set_unset_mixer_mode_properties(mixer_mode, group_checkbox_values, move_checkbox_values):
+    if mixer_mode:
+        group_checkbox_disabled = [True for checkbox in group_checkbox_values]
+        move_checkbox_disabled = [True for checkbox in move_checkbox_values]
+        mixer_moves_disabled = True
+        mixer_basices_disabled = True
+        metronome_button_disabled = True
+    else:
+        group_checkbox_disabled = [False for checkbox in group_checkbox_values]
+        move_checkbox_disabled = [False for checkbox in move_checkbox_values]
+        mixer_moves_disabled = False
+        mixer_basices_disabled = False
+        metronome_button_disabled = False
+
+    return group_checkbox_disabled, move_checkbox_disabled, mixer_moves_disabled, mixer_basices_disabled, metronome_button_disabled
 
 
 if __name__ == '__main__':
