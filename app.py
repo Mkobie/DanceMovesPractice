@@ -98,14 +98,20 @@ app.layout = html.Div([
                             dbc.InputGroupText("basics at"),
                             dbc.Input(id="metronome-bpm-input", type="number", value=default_interval["bpm"], min=bmp_limits["min"], max=bmp_limits["max"], step=1, debounce=True),
                             dbc.InputGroupText("bpm"),
-                            dbc.Button("\U0000266a", id="metronome-button", color="secondary", )
+                            dbc.Button("\U0000266a", id="metronome-button", color="secondary", ),
+                            dbc.DropdownMenu(
+                                    label="", id="mixer-show-vid", color="secondary",
+                                    children=[
+                                        dbc.DropdownMenuItem(item, id={'type': 'mixer-show-vid-dropdown-item', 'index': item}) for item in [" ", "with videos"]
+                                    ],
+                                ),
                         ],
                     ),
                     dcc.Interval(id="metronome-interval", interval=600, n_intervals=0, disabled=True),
                     html.Div(id="metronome-dummy", style={'display': 'none'}),
                     html.Audio(id="metronome-sound", src=metronome_audio, controls=False,
                                style={'display': 'none'}),
-                ], width=10),
+                ], width=8),
                 dbc.Col([
                     dbc.Button(mixer_btn_names["start"], id="mixer-button", color="secondary"),
                     dcc.Interval(id="mixer-count-interval", interval=default_interval["ms"], n_intervals=0, disabled=True),
