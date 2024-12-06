@@ -5,7 +5,6 @@ import dash_bootstrap_components as dbc
 from dash import html, callback, Input, Output, State, dcc
 
 # todo:
-#   Add toggle for video y/n during practice mix
 #   Decide how want metronome and mix to play together, or not at all
 #   Maybe also add option for verbal count (1,2,3,4,5,6,7,8) in background
 #   Smooth out video player reload on new src (preload? use vid lib eg videos.js or plyr?)
@@ -34,6 +33,8 @@ mixer_btn_names = {"start": "Let's go!", "stop": "Aaand stop!"}
 
 default_interval = {"bpm": 75}
 default_interval["ms"] = 60000 / default_interval["bpm"]
+
+show_video_dropdown_options = ["without video", "with video"]
 
 
 assets_folder = Path.cwd() / 'assets'
@@ -97,12 +98,13 @@ app.layout = html.Div([
                                 ),
                             dbc.InputGroupText("basics at"),
                             dbc.Input(id="metronome-bpm-input", type="number", value=default_interval["bpm"], min=bmp_limits["min"], max=bmp_limits["max"], step=1, debounce=True),
-                            dbc.InputGroupText("bpm"),
                             dbc.Button("\U0000266a", id="metronome-button", color="secondary", ),
+                            dbc.InputGroupText("bpm"),
                             dbc.DropdownMenu(
-                                    label="", id="mixer-show-vid", color="secondary",
+                                    label=show_video_dropdown_options[0], id="mixer-show-vid", color="secondary",
                                     children=[
-                                        dbc.DropdownMenuItem(item, id={'type': 'mixer-show-vid-dropdown-item', 'index': item}) for item in [" ", "with videos"]
+                                        dbc.DropdownMenuItem(show_video_dropdown_options[0], id="option-1"),
+                                        dbc.DropdownMenuItem(show_video_dropdown_options[1], id="option-2")
                                     ],
                                 ),
                         ],
@@ -111,7 +113,7 @@ app.layout = html.Div([
                     html.Div(id="metronome-dummy", style={'display': 'none'}),
                     html.Audio(id="metronome-sound", src=metronome_audio, controls=False,
                                style={'display': 'none'}),
-                ], width=8),
+                ], width=9),
                 dbc.Col([
                     dbc.Button(mixer_btn_names["start"], id="mixer-button", color="secondary"),
                     dcc.Interval(id="mixer-count-interval", interval=default_interval["ms"], n_intervals=0, disabled=True),
@@ -149,9 +151,10 @@ app.layout = html.Div([
         Input({'type': 'move-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
         Input("current-move", "data"),
     ],
+    State("mixer-show-vid", "label"),
     prevent_initial_call=True
 )
-def show_selected_move(n_clicks, current_move):
+def show_selected_move(n_clicks, current_move, show_video):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update
@@ -163,7 +166,10 @@ def show_selected_move(n_clicks, current_move):
     else:
         clicked_move_name = eval(triggered_id)['index']
 
-    video_file = f"/assets/{clicked_move_name}.mp4"
+    if show_video == show_video_dropdown_options[1]:
+        video_file = f"/assets/{clicked_move_name}.mp4"
+    else:
+        video_file = None
     button_colors = ['primary' if move.name == clicked_move_name else 'secondary' for move in dance_moves.moves]
     href_visibility = [{'display': 'block'} if move.name == clicked_move_name else {'display': 'none'} for move in
                   dance_moves.moves]
@@ -418,6 +424,18 @@ app.clientside_callback(
     Input('mixer-sound', 'src'),
     prevent_initial_call=True
 )
+
+
+@app.callback(
+    Output("mixer-show-vid", "label"),
+    [Input("option-1", "n_clicks"), Input("option-2", "n_clicks")],
+)
+def update_dropdown_label(n1, n2):
+    if n1:
+        return show_video_dropdown_options[0]
+    elif n2:
+        return show_video_dropdown_options[1]
+    return dash.no_update
 
 
 if __name__ == '__main__':
