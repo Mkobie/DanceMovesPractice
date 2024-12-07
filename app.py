@@ -1,8 +1,12 @@
-from pathlib import Path
-
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, callback, Input, Output, State, dcc
+from dash import html, callback, Input, Output, State
+
+from MoveMixer import generate_dance_sequence
+from move_list import move_list
+from navbar import navbar
+from player_and_mixer import player_and_mixer
+from setup import grouping_titles, mixer_moves, mixer_btn_names, show_video_dropdown_options, dance_moves
 
 # todo:
 #   Decide how want metronome and mix to play together, or not at all
@@ -17,127 +21,34 @@ from dash import html, callback, Input, Output, State, dcc
 #   Make title into banner across top
 #   Separate code into multiple files, may be make a flow chart
 
-from DanceMove import DanceMoveCollection
-from MoveMixer import generate_dance_sequence
-
 # todo: add moves from
 #  https://thebluesroom.com/courses/side-by-side/
 #   and add basic slow taps and quick quicks.
 
-grouping_titles = ["Basic turns", "Ballroom blues", "Ballroom blues - turns", "Close embrace", "Close embrace - spins"]
-mixer_moves = {"all": grouping_titles,
-               "some": ["Basic turns", "Ballroom blues", "Ballroom blues - turns"],
-               "a few": ["Basic turns"]}
-bmp_limits = {"min": 30, "max": 300}
-mixer_btn_names = {"start": "Let's go!", "stop": "Aaand stop!"}
 
-default_interval = {"bpm": 75}
-default_interval["ms"] = 60000 / default_interval["bpm"]
-
-show_video_dropdown_options = ["without video", "with video"]
-
-
-assets_folder = Path.cwd() / 'assets'
-metronome_audio = "/assets/Perc_MetronomeQuartz_hi.wav"
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 
-dance_moves = DanceMoveCollection()
 
-def generate_move_button_row(move):
-    return html.Div([
-        dbc.Button(move.name, id={'type': 'move-button', 'index': f"{move.name}"}, color="secondary", className="flex-grow-1", n_clicks=0),
-        dbc.Button("\U0001F855", id={'type': 'lesson-button', 'index': f"{move.name}"}, href=f"{move.lesson}", target="_blank", style={'display': 'none'}, color="secondary", className="flex-shrink-1"),
-        dbc.Checkbox(id={'type': 'move-checkbox', 'index': f"{move.name}"}, style={'margin-left': '10px'}, value=False),
-    ], className="d-flex align-items-center mb-1 ms-4")
-
-def generate_column_of_move_button_rows(title):
-    moves_for_column = [move for move in dance_moves.moves if move.grouping == title]
-    return html.Div([
-        html.Div([dbc.Checkbox(id={'type': 'group-checkbox', 'index': f"{title}"}, value=False), html.H6(title, className="card-title")], className="d-flex align-items-center mb-1"),
-        html.Div([generate_move_button_row(move) for move in moves_for_column])
-    ])
-
-def generate_groups_of_moves():
-    groups = []
-    for title in grouping_titles:
-        groups.append(generate_column_of_move_button_rows(title))
-    return html.Div(groups)
 
 app.layout = html.Div([
-    html.Div([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(navbar)
+        ]),
 
-        html.Div([
-            html.H1("Blues Moves Practice"),
-            html.Video(
-                id="video-player",
-                src=f"/assets/{dance_moves.moves[0].name}.mp4",
-                controls=True,
-                autoPlay=True,
-                loop=True,
-                style={"width": "100%", "height": "auto"}
-            ),
-            dbc.Row([
-                html.H6("Move mixer"),
-                dbc.Col([
-                    dbc.InputGroup(
-                        [
-                            dbc.InputGroupText("Practice"),
-                            dbc.DropdownMenu(
-                                    label="-", id="mixer-moves", color="secondary",
-                                    children=[
-                                        dbc.DropdownMenuItem(item, id={'type': 'mixer-moves-dropdown-item', 'index': item}) for item in mixer_moves.keys()
-                                    ],
-                                ),
-                            dbc.InputGroupText("moves and"),
-                            dbc.DropdownMenu(
-                                    label="some", id="mixer-basics", color="secondary",
-                                    children=[
-                                        dbc.DropdownMenuItem(item, id={'type': 'mixer-basics-dropdown-item', 'index': item}) for item in ["no", "some", "a lot of"]
-                                    ],
-                                ),
-                            dbc.InputGroupText("basics at"),
-                            dbc.Input(id="metronome-bpm-input", type="number", value=default_interval["bpm"], min=bmp_limits["min"], max=bmp_limits["max"], step=1, debounce=True),
-                            dbc.Button("\U0000266a", id="metronome-button", color="secondary", ),
-                            dbc.InputGroupText("bpm"),
-                            dbc.DropdownMenu(
-                                    label=show_video_dropdown_options[0], id="mixer-show-vid", color="secondary",
-                                    children=[
-                                        dbc.DropdownMenuItem(show_video_dropdown_options[0], id="option-1"),
-                                        dbc.DropdownMenuItem(show_video_dropdown_options[1], id="option-2")
-                                    ],
-                                ),
-                        ],
-                    ),
-                    dcc.Interval(id="metronome-interval", interval=600, n_intervals=0, disabled=True),
-                    html.Div(id="metronome-dummy", style={'display': 'none'}),
-                    html.Audio(id="metronome-sound", src=metronome_audio, controls=False,
-                               style={'display': 'none'}),
-                ], width=9),
-                dbc.Col([
-                    dbc.Button(mixer_btn_names["start"], id="mixer-button", color="secondary"),
-                    dcc.Interval(id="mixer-count-interval", interval=default_interval["ms"], n_intervals=0, disabled=True),
-                    html.Div(id="mixer-dummy", style={'display': 'none'}),
-                    html.Audio(id="mixer-sound", controls=False, style={'display': 'none'}),
-                    dcc.Store(id="current-move", data=None),
-                    dcc.Store(id="current-sequence", data=[]),
-                    dcc.Store(id="current-move-countdown", data=None),
-                    dcc.Store(id="mixer-available-moves", data=[]),
-                ]),
-            ], className="mt-3")
-        ], style={'width': '65%', 'display': 'inline-block', 'vertical-align': 'top',
-                  'padding': '20px', 'box-sizing': 'border-box'}),
-
-        html.Div([
-            html.H6("Move list"),
-            dcc.Store(id='group-checkbox-store', data=dict(zip(grouping_titles, [False for title in grouping_titles]))),
-            dcc.Store(id='move-checkbox-store', data=dict(zip([move.name for move in dance_moves.moves], [False for move in dance_moves.moves]))),
-            generate_groups_of_moves()
-        ],
-                 style={'width': '35%', 'display': 'inline-block', 'vertical-align': 'top',
-                  'padding': '20px', 'box-sizing': 'border-box',
-                  'height': '100vh', 'overflow-y': 'scroll'}),
-    ])
+        dbc.Row(
+            [
+                dbc.Col(player_and_mixer,
+                        style={
+                            "maxHeight": "calc(100vh - 70px)",
+                            "overflow": "hidden",
+                        }
+                ),
+                dbc.Col(move_list, width=4),
+            ]
+        )
+    ], fluid=True)
 ])
 
 
