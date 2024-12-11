@@ -9,21 +9,10 @@ from setup import mixer_btn_names, show_video_dropdown, dance_moves, default_int
 from webapp.server import app
 
 # todo:
-#   Decide how want metronome and mix to play together, or not at all
-#   Maybe also add option for verbal count (1,2,3,4,5,6,7,8) in background
 #   Smooth out video player reload on new src (preload? use vid lib eg videos.js or plyr?)
-#   Check how to reduce memory for faster / more consistent response of count / move audio
-#       Maybe have 2 audio players, swap back and forth?
-#   Review which elements users can interact with when mixing (disable video pause? make stop button more colourful?)
-#   If user starts mix with no moves selected, then select them all?
-#   Mix up to xyz group instead of few/all
-#   Decide about audio/video start on 1 vs audio in anticipation of move (maybe record self saying prompts to music)
-#   Make title into banner across top
-#   Separate code into multiple files, may be make a flow chart
 
 # todo: add moves from
 #  https://thebluesroom.com/courses/side-by-side/
-#   and add basic slow taps and quick quicks.
 
 
 layout = html.Div([
@@ -95,6 +84,7 @@ def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_v
 @app.callback(
     [
         Output("mixer-button", "children"),
+        Output("mixer-button", "color"),
         Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
         Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
         Output("mixer-moves", "disabled"),
@@ -106,25 +96,27 @@ def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_v
     State("mixer-button", "children"),
     prevent_initial_call=True
 )
-def manage_layout_on_mixer_button_press(n_clicks, button_name):
-    if button_name == mixer_btn_names["start"]:
+def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name):
+    if mixer_button_name == mixer_btn_names["start"]:
         # Start the mixer
-        button_name = mixer_btn_names["stop"]
+        mixer_button_name = mixer_btn_names["stop"]
+        mixer_button_color = 'primary'
         group_checkbox_disabled = [True for group in dance_moves.groups]
         move_checkbox_disabled = [True for move in dance_moves.moves]
         mixer_moves_disabled = True
         metronome_button_disabled = False
-        button_enable = [True for move in dance_moves.moves]
+        move_list_button_enable = [True for move in dance_moves.moves]
     else:
         # Stop the mixer
-        button_name = mixer_btn_names["start"]
+        mixer_button_name = mixer_btn_names["start"]
+        mixer_button_color = 'secondary'
         group_checkbox_disabled = [False for group in dance_moves.groups]
         move_checkbox_disabled = [False for move in dance_moves.moves]
         mixer_moves_disabled = False
         metronome_button_disabled = False
-        button_enable = [False for move in dance_moves.moves]
+        move_list_button_enable = [False for move in dance_moves.moves]
 
-    return button_name, group_checkbox_disabled, move_checkbox_disabled, mixer_moves_disabled, metronome_button_disabled, button_enable, button_enable
+    return mixer_button_name, mixer_button_color, group_checkbox_disabled, move_checkbox_disabled, mixer_moves_disabled, metronome_button_disabled, move_list_button_enable, move_list_button_enable
 
 
 @app.callback(
