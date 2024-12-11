@@ -1,6 +1,5 @@
-import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output
 
 from setup import bmp_limits, mixer_btn_names, default_interval, show_video_dropdown, \
     metronome_audio, grouping_titles
@@ -63,46 +62,6 @@ mixer = dbc.Row(
                 ], className="mt-3",
 
             )
-
-
-@app.callback(
-    [
-        Output("metronome-interval", "interval"),
-        Output("mixer-count-interval", "interval"),
-        Output("metronome-interval", "disabled"),
-        Output("metronome-button", "children"),
-    ],
-    [
-        Input("metronome-button", "n_clicks"),
-        Input("metronome-bpm-input", "value"),
-    ],
-    [
-        State("metronome-interval", "disabled"),
-    ],
-    prevent_initial_call=True
-)
-def control_metronome(n_clicks, bpm, is_disabled):
-    ctx = dash.callback_context
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    metronome_interval = dash.no_update
-    metronome_disabled = dash.no_update
-    metronome_button_text = dash.no_update
-
-    if triggered_id == "metronome-button":
-        if is_disabled:
-            metronome_interval = 60000 / bpm
-            metronome_disabled = False
-            metronome_button_text = "\U0000266a..."
-        else:
-            metronome_disabled = True
-            metronome_button_text = "\U0000266a"
-
-    elif triggered_id == "metronome-bpm-input":
-        if not is_disabled:
-            metronome_interval = 60000 / bpm
-
-    return metronome_interval, metronome_interval, metronome_disabled, metronome_button_text
 
 
 app.clientside_callback(

@@ -94,8 +94,6 @@ def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_v
 
 @app.callback(
     [
-        Output("mixer-count-interval", "disabled"),
-        Output("mixer-count-interval", "interval", allow_duplicate=True),
         Output("mixer-button", "children"),
         Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
         Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
@@ -108,10 +106,9 @@ def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_v
     State("mixer-button", "children"),
     prevent_initial_call=True
 )
-def on_mixer_button_press(n_clicks, button_name):
+def manage_layout_on_mixer_button_press(n_clicks, button_name):
     if button_name == mixer_btn_names["start"]:
         # Start the mixer
-        mixer_disabled = False
         button_name = mixer_btn_names["stop"]
         group_checkbox_disabled = [True for group in dance_moves.groups]
         move_checkbox_disabled = [True for move in dance_moves.moves]
@@ -120,7 +117,6 @@ def on_mixer_button_press(n_clicks, button_name):
         button_enable = [True for move in dance_moves.moves]
     else:
         # Stop the mixer
-        mixer_disabled = True
         button_name = mixer_btn_names["start"]
         group_checkbox_disabled = [False for group in dance_moves.groups]
         move_checkbox_disabled = [False for move in dance_moves.moves]
@@ -128,26 +124,68 @@ def on_mixer_button_press(n_clicks, button_name):
         metronome_button_disabled = False
         button_enable = [False for move in dance_moves.moves]
 
-
-    return mixer_disabled, default_interval["ms"]/2, button_name, group_checkbox_disabled, move_checkbox_disabled, mixer_moves_disabled, metronome_button_disabled, button_enable, button_enable
+    return button_name, group_checkbox_disabled, move_checkbox_disabled, mixer_moves_disabled, metronome_button_disabled, button_enable, button_enable
 
 
 @app.callback(
     [
+        Output("metronome-button", "children"),
+        Output("metronome-interval", "interval"),
+        Output("metronome-interval", "disabled"),
+
+        Output("mixer-count-interval", "disabled"),
+        Output("mixer-count-interval", "interval"),
         Output("mixer-sound", "src"),
-        Output("mixer-count-interval", "interval", allow_duplicate=True),
+
         Output("current-move", "data", allow_duplicate=True),
     ],
-    Input("mixer-count-interval", "n_intervals"),
-    State("metronome-bpm-input", "value"),
+    [
+        Input("metronome-button", "n_clicks"),
+        Input("metronome-bpm-input", "value"),
+
+        Input("mixer-button", "n_clicks"),
+        Input("mixer-count-interval", "n_intervals"),
+    ],
+    [
+        State("metronome-interval", "disabled"),
+        State("mixer-button", "children"),
+    ],
     prevent_initial_call=True
 )
-def set_mixer_audio(n_intervals, bpm):
-    # todo: move to mixer?
-    new_move = dance_moves.pop_current_move()
-    move_file = f"/assets/{new_move.name}.wav"
-    new_interval = new_move.counts * (60000 / bpm)  # todo: maybe bpm_interval would be more useful?
-    return move_file, new_interval, new_move.name
+def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_intervals, metronome_is_disabled, mixer_button_name):
+    ctx = dash.callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    metronome_button_text = metronome_interval = metronome_disabled = mixer_disabled = mixer_interval = move_file = current_move = dash.no_update
+
+    match triggered_id:
+        case "metronome-button":
+            if metronome_is_disabled:
+                metronome_interval = 60000 / bpm
+                metronome_disabled = False
+                metronome_button_text = "\U0000266a..."
+            else:
+                metronome_disabled = True
+                metronome_button_text = "\U0000266a"
+
+        case "metronome-bpm-input":
+            if not metronome_is_disabled:
+                metronome_interval = 60000 / bpm
+
+        case "mixer-button":
+            if mixer_button_name == mixer_btn_names["start"]:
+                mixer_disabled = False
+                mixer_interval = default_interval["ms"]/2
+            else:
+                mixer_disabled = True
+
+        case "mixer-count-interval":
+            new_move = dance_moves.pop_current_move()
+            move_file = f"/assets/{new_move.name}.wav"
+            mixer_interval = new_move.counts * (60000 / bpm)  # todo: maybe bpm_interval would be more useful?
+            current_move = new_move.name
+
+    return metronome_button_text, metronome_interval, metronome_disabled, mixer_disabled, mixer_interval, move_file, current_move
 
 
 app.clientside_callback(
