@@ -2,14 +2,18 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, callback, Input, Output, State, dcc
 
-from move_list import move_list
-from navbar import navbar
-from player_and_mixer import player_and_mixer
 from setup import mixer_btn_names, show_video_dropdown, dance_moves, default_interval
+from webapp.move_list import move_list
+from webapp.navbar import navbar
+from webapp.player_and_mixer import player_and_mixer
 from webapp.server import app
 
 # todo:
+#   Metronome isn't consistent, esp when move changes. Possible to make it smoother? (separate it again?)
+#   Make it possible to use "up to move" selection dropdown even while mixer is running?
 #   Smooth out video player reload on new src (preload? use vid lib eg videos.js or plyr?)
+#   Iron out video automatic start / stop in different contexts
+#   Fix paths s.t. can run from main.py or app.py
 
 # todo: add moves from
 #  https://thebluesroom.com/courses/side-by-side/
