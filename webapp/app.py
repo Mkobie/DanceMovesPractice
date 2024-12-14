@@ -10,7 +10,6 @@ from webapp.server import app
 
 # todo:
 #   Metronome isn't consistent, esp when move changes. Possible to make it smoother? (separate it again?)
-#   Make it possible to use "up to move" selection dropdown even while mixer is running?
 #   Smooth out video player reload on new src (preload? use vid lib eg videos.js or plyr?)
 #   Iron out video automatic start / stop in different contexts
 #   Fix paths s.t. can run from main.py or app.py
@@ -89,9 +88,6 @@ def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_v
     [
         Output("mixer-button", "children"),
         Output("mixer-button", "color"),
-        Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
-        Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'disabled'),
-        Output("mixer-moves", "disabled"),
         Output("metronome-button", "disabled"),
         Output({'type': 'move-button', 'index': dash.dependencies.ALL}, 'disabled'),
         Output({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'disabled'),
@@ -105,22 +101,16 @@ def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name):
         # Start the mixer
         mixer_button_name = mixer_btn_names["stop"]
         mixer_button_color = 'primary'
-        group_checkbox_disabled = [True for group in dance_moves.groups]
-        move_checkbox_disabled = [True for move in dance_moves.moves]
-        mixer_moves_disabled = True
         metronome_button_disabled = False
         move_list_button_enable = [True for move in dance_moves.moves]
     else:
         # Stop the mixer
         mixer_button_name = mixer_btn_names["start"]
         mixer_button_color = 'secondary'
-        group_checkbox_disabled = [False for group in dance_moves.groups]
-        move_checkbox_disabled = [False for move in dance_moves.moves]
-        mixer_moves_disabled = False
         metronome_button_disabled = False
         move_list_button_enable = [False for move in dance_moves.moves]
 
-    return mixer_button_name, mixer_button_color, group_checkbox_disabled, move_checkbox_disabled, mixer_moves_disabled, metronome_button_disabled, move_list_button_enable, move_list_button_enable
+    return mixer_button_name, mixer_button_color, metronome_button_disabled, move_list_button_enable, move_list_button_enable
 
 
 @app.callback(
@@ -176,7 +166,7 @@ def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_interv
                 mixer_disabled = True
 
         case "mixer-count-interval":
-            new_move = dance_moves.pop_current_move()
+            new_move = dance_moves.get_move()
             move_file = f"/assets/{new_move.name}.wav"
             mixer_interval = new_move.counts * (60000 / bpm)  # todo: maybe bpm_interval would be more useful?
             current_move = new_move.name

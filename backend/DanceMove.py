@@ -36,7 +36,7 @@ class DanceMoveCollection:
         self.groups = []
         self._basic = DanceMove("Basic", 4, None, None)
         self._sequence_count = 16
-        self._current_sequence = []
+        self._remaining_counts = self._sequence_count
 
         if type(data) == pd.DataFrame:
             self.load_data(data)
@@ -120,29 +120,19 @@ class DanceMoveCollection:
             else:
                 move.selected = False
 
-    def _generate_sequence(self):
-        remaining_counts = self._sequence_count
-
-        while remaining_counts > 0:
-            possible_moves = [move for move in self.get_list_of_selected_moves() if move.counts <= remaining_counts]
+    def get_move(self):
+        if self._remaining_counts > 0:
+            if self.get_list_of_selected_moves():
+                possible_moves = [move for move in self.get_list_of_selected_moves() if move.counts <= self._remaining_counts]
+            else:
+                possible_moves = [self._basic]
             chosen_move = random.choice(possible_moves)
-            self._current_sequence.append(chosen_move)
-            remaining_counts -= chosen_move.counts
-
-        if remaining_counts == 0:
-            return self._current_sequence
+            self._remaining_counts -= chosen_move.counts
+            return chosen_move
         else:
-            return self._generate_sequence()
+            self._remaining_counts = self._sequence_count
+            return self.get_move()
 
-    def get_current_move(self):
-        if not self._current_sequence:
-            self._generate_sequence()
-        return self._current_sequence[0]
-
-    def pop_current_move(self):
-        if not self._current_sequence:
-            self._generate_sequence()
-        return self._current_sequence.pop(0)
 
     def __repr__(self):
         return f"DanceMoveCollection(groups='{self.groups}', moves='{self.moves}')"
