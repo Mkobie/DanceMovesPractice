@@ -61,34 +61,16 @@ class TestDanceMoveCollection(unittest.TestCase):
         expected_list = ['Basic outside turn', 'Basic inside turn', 'Lunge']
         self.assertEqual(expected_list, self.collection.get_list_of_selected_move_names())
 
-    def test_get_current_move(self):
-        new_move = self.collection.get_current_move()
+    def test_get_current_move_with_dynamic_selection(self):
+        new_move = self.collection.get_move()
 
         list_of_possible_moves = ['Basic outside turn', 'Promenade', 'Lunge']
         self.assertIn(new_move.name, list_of_possible_moves)
         self.assertNotEqual("Basic inside turn", new_move.name)
 
-        new_move_again = self.collection.get_current_move()
-        self.assertEqual(new_move, new_move_again)
-
-    def test_pop_current_move(self):
-        list_of_move_names = []
-        expected_count = 16
-        accumulated_count = 0
-
-        while accumulated_count < expected_count:
-            new_move = self.collection.pop_current_move()
-            list_of_move_names.append(new_move.name)
-            accumulated_count += new_move.counts
-
-        list_of_possible_moves = ['Basic outside turn', 'Promenade', 'Lunge']
-
-        self.assertEqual(expected_count, accumulated_count)
-        self.assertIn(list_of_move_names[0], list_of_possible_moves)
-        self.assertNotIn("Basic inside turn", list_of_move_names)
-
-        starting_move_of_next_sequence = self.collection.pop_current_move()
-        self.assertIn("DanceMove", str(starting_move_of_next_sequence))
+        self.collection.set_move_selected_state([False, True, False, False])
+        new_move = self.collection.get_move()
+        self.assertEqual(new_move.name, "Basic inside turn")
 
 
 if __name__ == '__main__':
