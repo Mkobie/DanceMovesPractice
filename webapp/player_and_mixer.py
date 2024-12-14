@@ -31,8 +31,12 @@ player_and_mixer = dbc.Card(
     prevent_initial_call=True
 )
 def update_dropdown_label(n1, n2):
-    if n1:
-        return show_video_dropdown[0]
-    elif n2:
-        return show_video_dropdown[1]
-    return dash.no_update
+    ctx = dash.callback_context
+    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    if "no" in triggered_id:
+        return show_video_dropdown[False]
+    elif "yes" in triggered_id:
+        return show_video_dropdown[True]
+    else:
+        return dash.no_update
