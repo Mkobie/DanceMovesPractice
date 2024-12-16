@@ -1,11 +1,19 @@
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, Input, Output
+from dash import html, dcc, Input, Output
 
 from mixer import mixer
-from player import player
+from setup import dance_moves
 from setup import show_video_dropdown
 from webapp.server import app
+
+player = html.Video(id="video-player",
+                    src=f"assets/{dance_moves.moves[0].name}.mp4",
+                    controls=True,
+                    autoPlay=True,
+                    loop=True,
+                    muted=True,
+                    style={"width": "100%", "height": "auto"})
 
 player_and_mixer = dbc.Card(
                     dbc.CardBody(
@@ -14,7 +22,9 @@ player_and_mixer = dbc.Card(
                             html.Div(
                                 [
                                     player,
-                                    mixer
+                                    mixer,
+                                    dcc.Store(id="video-source"),
+                                    dcc.Store(id="dummy"),
                                 ],
                             )
                         ], style={'height': '90vh'}
@@ -40,3 +50,20 @@ def update_dropdown_label(n1, n2):
         return show_video_dropdown[True]
     else:
         return dash.no_update
+
+
+app.clientside_callback(
+    """
+    function(videoSrc) {
+        const videoPlayer = document.getElementById('video-player');
+        if (videoPlayer && videoSrc) {
+            videoPlayer.src = videoSrc;
+            videoPlayer.currentTime = 0;
+            videoPlayer.play();
+        }
+        return null;
+    }
+    """,
+    Output("dummy", "data"),
+    Input("video-source", "data")
+)
