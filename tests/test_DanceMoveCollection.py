@@ -3,6 +3,7 @@ import unittest
 import pandas as pd
 
 from backend.DanceMove import DanceMoveCollection
+from setup import dance_moves
 
 
 class TestDanceMoveCollection(unittest.TestCase):
@@ -71,6 +72,13 @@ class TestDanceMoveCollection(unittest.TestCase):
         self.collection.set_move_selected_state([False, True, False, False])
         new_move = self.collection.get_move()
         self.assertEqual(new_move.name, "Basic inside turn")
+
+    def test_get_item(self):
+        for dance_move in self.collection:
+            self.assertIn("DanceMove(", str(dance_move))
+
+    def test_len(self):
+        self.assertEqual(4, len(self.collection))
 
 
 if __name__ == '__main__':

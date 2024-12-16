@@ -45,6 +45,15 @@ class DanceMoveCollection:
         else:
             self.load_from_excel()
 
+    def __getitem__(self, index) -> Union[DanceMove, None]:
+        if self.moves:
+            return self.moves[index]
+        else:
+            return None
+
+    def __len__(self):
+        return len(self.moves)
+
     def load_from_excel(self, file_path=None):
         file_path = file_path or download_excel_from_gdrive()
         df = pd.read_excel(file_path)
