@@ -9,13 +9,9 @@ from webapp.player_and_mixer import player_and_mixer
 from webapp.server import app
 
 # todo:
-#   Metronome isn't consistent, esp when move changes. Possible to make it smoother? (separate it again?)
-#   Smooth out video player reload on new src (preload? use vid lib eg videos.js or plyr?)
-#   Iron out video automatic start / stop in different contexts
+#   Metronome isn't consistent, esp when move changes. Possible to make it smoother? Or drop the first count?
 #   Fix paths s.t. can run from main.py or app.py
-
-# todo: add moves from
-#  https://thebluesroom.com/courses/side-by-side/
+#   Add moves from https://thebluesroom.com/courses/side-by-side/
 
 
 layout = html.Div([
@@ -46,7 +42,6 @@ def run():
     prevent_initial_call=True
 )
 def set_current_move(active_move_button):
-    # todo: goes in app if current-move is used by mixer, else in move_list if only for showing move list clicks?
     ctx = dash.callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     clicked_move_name = eval(triggered_id)['index']
@@ -61,7 +56,6 @@ def set_current_move(active_move_button):
     Input("current-move", "data"),
 )
 def show_current_move_in_move_list(current_move):
-    # todo: goes in move_list?
     button_colors = ['primary' if move.name == current_move else 'secondary' for move in dance_moves.moves]
     href_visibility = [{'display': 'block'} if move.name == current_move else {'display': 'none'} for move in dance_moves.moves]
 
@@ -69,7 +63,7 @@ def show_current_move_in_move_list(current_move):
 
 
 @callback(
-    Output("video-player", "src"),
+    Output("video-source", "data"),
     Input("current-move", "data"),
     [
         State("mixer-count-interval", "disabled"),
@@ -77,7 +71,6 @@ def show_current_move_in_move_list(current_move):
     ]
 )
 def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_vid):
-    # todo: goes in player? Naaaa... cross contaminated with mixer stuff
     if mixer_disabled or (not mixer_disabled and show_mixer_vid == show_video_dropdown[1]):
         return f"assets/{current_move}.mp4"
     else:
@@ -168,7 +161,7 @@ def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_interv
         case "mixer-count-interval":
             new_move = dance_moves.get_move()
             move_file = f"/assets/{new_move.name}.wav"
-            mixer_interval = new_move.counts * (60000 / bpm)  # todo: maybe bpm_interval would be more useful?
+            mixer_interval = new_move.counts * (60000 / bpm)
             current_move = new_move.name
 
     return metronome_button_text, metronome_interval, metronome_disabled, mixer_disabled, mixer_interval, move_file, current_move
