@@ -142,6 +142,9 @@ class DanceMoveCollection:
             self._remaining_counts = self._sequence_count
             return self.get_move()
 
+    def get_groups(self):
+        return self.groups
+
 
     def __repr__(self):
         return f"DanceMoveCollection(groups='{self.groups}', moves='{self.moves}')"

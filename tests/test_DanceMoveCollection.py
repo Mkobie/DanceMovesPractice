@@ -3,7 +3,6 @@ import unittest
 import pandas as pd
 
 from backend.DanceMove import DanceMoveCollection
-from setup import dance_moves
 
 
 class TestDanceMoveCollection(unittest.TestCase):
@@ -79,6 +78,11 @@ class TestDanceMoveCollection(unittest.TestCase):
 
     def test_len(self):
         self.assertEqual(4, len(self.collection))
+
+    def test_get_list_of_group_names(self):
+        group_names = self.collection.get_groups()
+
+        self.assertEqual(['Basic turns', 'Ballroom blues', 'Close embrace'], group_names)
 
 
 if __name__ == '__main__':
