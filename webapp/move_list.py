@@ -2,7 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, State
 
-from setup import grouping_titles, dance_moves
+from setup import dance_moves
 from webapp.server import app
 
 def generate_move_button_row(move):
@@ -21,7 +21,7 @@ def generate_column_of_move_button_rows(title):
 
 def generate_groups_of_moves():
     groups = []
-    for title in grouping_titles:
+    for title in dance_moves.get_groups():
         groups.append(generate_column_of_move_button_rows(title))
     return html.Div(groups)
 
