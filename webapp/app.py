@@ -6,9 +6,11 @@ from setup import mixer_btn_names, show_video_dropdown, dance_moves, default_int
 from webapp.move_list import move_list
 from webapp.navbar import navbar
 from webapp.player_and_mixer import player_and_mixer
-from webapp.server import app
 
-layout = html.Div([
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
+server = app.server
+
+app.layout = html.Div([
     dbc.Container([
         dbc.Row([
             dbc.Col(navbar)
@@ -26,7 +28,6 @@ layout = html.Div([
 
 
 def run():
-    app.layout = layout
     app.run_server(debug=True)
 
 
@@ -174,6 +175,40 @@ app.clientside_callback(
     ''',
     Output('mixer-dummy', 'children'),
     Input('mixer-sound', 'src'),
+    prevent_initial_call=True
+)
+
+
+app.clientside_callback(
+    """
+    function(videoSrc) {
+        const videoPlayer = document.getElementById('video-player');
+        if (videoPlayer && videoSrc) {
+            videoPlayer.src = videoSrc;
+            videoPlayer.currentTime = 0;
+            videoPlayer.play();
+        }
+        return null;
+    }
+    """,
+    Output("dummy", "data"),
+    Input("video-source", "data")
+)
+
+
+app.clientside_callback(
+    '''
+    function(n_intervals) {
+        const audioElement = document.querySelector('#metronome-sound');
+        if (audioElement) {
+            audioElement.currentTime = 0;  // Reset the audio to the beginning
+            audioElement.play();  // Play the sound on each interval tick
+        }
+        return null;
+    }
+    ''',
+    Output('metronome-dummy', 'children'),
+    Input('metronome-interval', 'n_intervals'),
     prevent_initial_call=True
 )
 

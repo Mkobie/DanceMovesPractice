@@ -1,9 +1,9 @@
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, callback
 
 from setup import dance_moves
-from webapp.server import app
+
 
 def generate_move_button_row(move):
     return html.Div([
@@ -43,7 +43,7 @@ move_list = dbc.Card(
             )
 
 
-@app.callback(
+@callback(
     [
         Output("mixer-moves", "label"),
         Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'value'),
