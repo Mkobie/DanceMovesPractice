@@ -4,6 +4,7 @@ from typing import Union
 import gdown
 import pandas as pd
 
+
 class DanceMove:
     def __init__(self, name, counts, lesson, grouping, selected=False):
         self.name = name
@@ -32,6 +33,7 @@ class DanceMoveCollection:
         Data can be a pandas dataframe, or an excel.
         :param data:
         """
+        self._style = None
         self.moves = []
         self.groups = []
         self._basic = DanceMove("Basic", 4, None, None)
@@ -56,10 +58,13 @@ class DanceMoveCollection:
 
     def load_from_excel(self, file_path=None):
         file_path = file_path or download_excel_from_gdrive()
-        df = pd.read_excel(file_path)
+        with pd.ExcelFile(file_path) as xls:
+            df = pd.read_excel(xls, sheet_name=xls.sheet_names[0])
+            df.name = xls.sheet_names[0]
         self.load_data(df)
 
     def load_data(self, data: pd.DataFrame):
+        self._style = data.name
         for index, row in data.iterrows():
             move = DanceMove(
                 name=row['Name'],
@@ -145,6 +150,8 @@ class DanceMoveCollection:
     def get_groups(self):
         return self.groups
 
+    def get_style_name(self):
+        return self._style
 
     def __repr__(self):
         return f"DanceMoveCollection(groups='{self.groups}', moves='{self.moves}')"
