@@ -8,12 +8,6 @@ from webapp.navbar import navbar
 from webapp.player_and_mixer import player_and_mixer
 from webapp.server import app
 
-# todo:
-#   Metronome isn't consistent, esp when move changes. Possible to make it smoother? Or drop the first count?
-#   Fix paths s.t. can run from main.py or app.py
-#   Add moves from https://thebluesroom.com/courses/side-by-side/
-
-
 layout = html.Div([
     dbc.Container([
         dbc.Row([

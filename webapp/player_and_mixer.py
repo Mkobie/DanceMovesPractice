@@ -2,9 +2,9 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output
 
-from mixer import mixer
 from setup import dance_moves
 from setup import show_video_dropdown
+from webapp.mixer import mixer
 from webapp.server import app
 
 player = html.Video(id="video-player",
