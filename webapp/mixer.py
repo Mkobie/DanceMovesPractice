@@ -1,9 +1,8 @@
 import dash_bootstrap_components as dbc
-from dash import html, dcc, Input, Output
+from dash import html, dcc
 
 from setup import bmp_limits, mixer_btn_names, default_interval, show_video_dropdown, \
     metronome_audio, dance_moves
-from webapp.server import app
 
 mixer_settings = dbc.InputGroup(
                             [
@@ -62,20 +61,3 @@ mixer = dbc.Row(
                 ], className="mt-3",
 
             )
-
-
-app.clientside_callback(
-    '''
-    function(n_intervals) {
-        const audioElement = document.querySelector('#metronome-sound');
-        if (audioElement) {
-            audioElement.currentTime = 0;  // Reset the audio to the beginning
-            audioElement.play();  // Play the sound on each interval tick
-        }
-        return null;
-    }
-    ''',
-    Output('metronome-dummy', 'children'),
-    Input('metronome-interval', 'n_intervals'),
-    prevent_initial_call=True
-)
