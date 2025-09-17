@@ -67,7 +67,7 @@ def show_current_move_in_move_list(current_move):
 )
 def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_vid):
     if mixer_disabled or (not mixer_disabled and show_mixer_vid == show_video_dropdown[1]):
-        return f"assets/{current_move}.mp4"
+        return f"/assets/{current_move}.mp4"
     else:
         return dash.no_update
 
