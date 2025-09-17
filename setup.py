@@ -11,4 +11,3 @@ assets_folder = 'assets'
 metronome_audio = "assets/Perc_MetronomeQuartz_hi.wav"
 
 dance_moves = DanceMoveCollection()
-dance_moves.set_group_selected_state(dance_moves.groups[0])

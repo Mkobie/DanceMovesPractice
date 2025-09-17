@@ -49,6 +49,7 @@ move_list = dbc.Card(
         Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'value'),
         Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'value'),
         Output("group-checkbox-store", "data"),
+        Output("selected-moves", "data"),
     ],
     [
         Input({'type': 'mixer-moves-dropdown-item', 'index': dash.dependencies.ALL}, 'n_clicks'),
@@ -62,6 +63,14 @@ move_list = dbc.Card(
 )
 def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkbox_values, mixer_moves_label, group_checkbox_previous_values):
     ctx = dash.callback_context
+    groups = dance_moves.groups
+    moves = dance_moves.moves
+    group_map = dance_moves.groups_map()
+
+    new_group_checkbox_values = group_checkbox_values or [False] * len(groups)
+    new_move_checkbox_values = move_checkbox_values or [False] * len(moves)
+    mixer_moves_label = mixer_moves_label or "custom"
+
     if not ctx.triggered_id:
         pass
     else:
@@ -72,27 +81,26 @@ def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkb
         match trigger_source:
             case "mixer-moves-dropdown-item":
                 dropdown_index = ctx.triggered_id['index']
-
-                dance_moves.select_groups_up_to(dance_moves.groups[dropdown_index])
-                mixer_moves_label = dance_moves.groups[dropdown_index]
+                new_group_checkbox_values = [i <= dropdown_index for i in range(len(groups))]
+                sel_groups = {groups[i] for i, v in enumerate(new_group_checkbox_values) if v}
+                new_move_checkbox_values = [m.grouping in sel_groups for m in moves]
+                mixer_moves_label = groups[dropdown_index]
 
             case "group-checkbox":
-                changed_group = None
-                change_type = None
-                for i, (prev, new) in enumerate(zip(group_checkbox_previous_values, group_checkbox_values)):
-                    if prev != new:
-                        changed_group = dance_moves.groups[i]
-                        change_type = "selected" if prev is False and new is True else "deselected"
-                        break
-
-                dance_moves.set_group_selected_state(changed_group, change_type)
+                prev = group_checkbox_previous_values or [False] * len(groups)
+                changed_i = next((i for i, (a, b) in enumerate(zip(prev, new_group_checkbox_values)) if a != b), None)
+                if changed_i is not None:
+                    gname = groups[changed_i]
+                    target = new_group_checkbox_values[changed_i]
+                    for mi in group_map[gname]:
+                        new_move_checkbox_values[mi] = target
                 mixer_moves_label = "custom"
 
             case "move-checkbox":
-                dance_moves.set_move_selected_state(move_checkbox_values)
+                new_group_checkbox_values = []
+                for g in groups:
+                    idxs = group_map[g]
+                    new_group_checkbox_values.append(all(new_move_checkbox_values[i] for i in idxs))
                 mixer_moves_label = "custom"
 
-    new_group_checkbox_values = dance_moves.get_selected_groups_true_false_list()
-    new_move_checkbox_values = dance_moves.get_selected_moves_true_false_list()
-
-    return mixer_moves_label, new_group_checkbox_values, new_move_checkbox_values, new_group_checkbox_values
+    return mixer_moves_label, new_group_checkbox_values, new_move_checkbox_values, new_group_checkbox_values, new_move_checkbox_values

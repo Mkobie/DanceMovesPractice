@@ -75,77 +75,9 @@ class DanceMoveCollection:
             self.moves.append(move)
             self.groups = data["Grouping"].unique().tolist()
 
-    def set_move_selected_state(self, selection_list):
+    def _set_move_selected_state(self, selection_list):
         for i, move in enumerate(self.moves):
             move.selected = selection_list[i]
-
-    def set_group_selected_state(self, group, state:str = "selected"):
-        """
-        State must be "selected" to set the group selection to true. Anything else will deselect the group.
-        """
-        target_state = state == "selected"
-
-        moves_to_update = [move for move in self.moves if move.grouping == group]
-        for move in moves_to_update:
-            move.selected = target_state
-
-    def get_list_of_selected_moves(self) -> list[DanceMove]:
-        """
-        Returns a list of all moves that are selected in the app.
-        """
-        return [move for move in self.moves if move.selected]
-
-    def get_list_of_selected_move_names(self) -> list[str]:
-        """
-        Returns a list of the names of all moves that are selected in the app.
-        """
-        return [move.name for move in self.moves if move.selected]
-
-    def get_selected_moves_true_false_list(self) -> list[bool]:
-        moves_true_false_list = [move.selected for move in self.moves]
-        return moves_true_false_list
-
-    def get_list_of_selected_group_names(self) -> list[str]:
-        """
-        Returns a list of the names of all groups that have all their moves selected.
-        """
-        group_names = self.groups
-        for move in self.moves:
-            if not move.selected:
-                if move.grouping in group_names:
-                    group_names.remove(move.grouping)
-        return group_names
-
-    def get_selected_groups_true_false_list(self) -> list[bool]:
-        group_true_false_list = {group: True for group in self.groups}
-
-        for move in self.moves:
-            if not move.selected:
-                group_true_false_list[move.grouping] = False
-        return list(group_true_false_list.values())
-
-    def select_groups_up_to(self, end_group):
-        end_index = self.groups.index(end_group) + 1
-        selected_groups = self.groups[:end_index]
-
-        for move in self.moves:
-            if move.grouping in selected_groups:
-                move.selected = True
-            else:
-                move.selected = False
-
-    def get_move(self):
-        if self._remaining_counts > 0:
-            if self.get_list_of_selected_moves():
-                possible_moves = [move for move in self.get_list_of_selected_moves() if move.counts <= self._remaining_counts]
-            else:
-                possible_moves = [self._basic]
-            chosen_move = random.choice(possible_moves)
-            self._remaining_counts -= chosen_move.counts
-            return chosen_move
-        else:
-            self._remaining_counts = self._sequence_count
-            return self.get_move()
 
     def get_groups(self):
         return self.groups
@@ -155,3 +87,20 @@ class DanceMoveCollection:
 
     def __repr__(self):
         return f"DanceMoveCollection(groups='{self.groups}', moves='{self.moves}')"
+
+    @property
+    def sequence_count(self) -> int:
+        return self._sequence_count
+
+    @property
+    def basic_move(self) -> DanceMove:
+        return self._basic
+
+    def counts_map(self) -> dict[str, int]:
+        return {m.name: m.counts for m in self.moves}
+
+    def groups_map(self) -> dict[str, list[int]]:
+        mp: dict[str, list[int]] = {g: [] for g in self.groups}
+        for i, m in enumerate(self.moves):
+            mp[m.grouping].append(i)
+        return mp

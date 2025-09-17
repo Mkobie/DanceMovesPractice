@@ -1,7 +1,10 @@
+import random
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import html, callback, Input, Output, State, dcc
 
+from backend.DanceMove import DanceMoveCollection
 from setup import mixer_btn_names, show_video_dropdown, dance_moves, default_interval
 from webapp.move_list import move_list
 from webapp.navbar import navbar
@@ -23,6 +26,8 @@ app.layout = html.Div([
     ], fluid=True),
 
     dcc.Store(id="current-move", data=dance_moves.moves[0].name),
+    dcc.Store(id="selected-moves", data=[False]*len(dance_moves.moves), storage_type="session"),
+    dcc.Store(id="mixer-remaining", data=None, storage_type="session"),
 ])
 
 
@@ -101,6 +106,22 @@ def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name):
     return mixer_button_name, mixer_button_color, metronome_button_disabled, move_list_button_enable, move_list_button_enable
 
 
+def pick_next_move(selected_bools, remaining, catalog: DanceMoveCollection, bpm):
+    remaining = catalog.sequence_count if (remaining is None or remaining <= 0) else remaining
+
+    pool = [m for m, sel in zip(catalog.moves, selected_bools) if sel and m.counts <= remaining]
+    if not pool:
+        basic = catalog.basic_move
+        if basic.counts > remaining:
+            remaining = catalog.sequence_count
+        pool = [basic]
+
+    chosen = random.choice(pool)
+    remaining_after = remaining - chosen.counts
+    interval_ms = chosen.counts * (60000 / bpm)
+    return chosen, remaining_after, interval_ms
+
+
 @app.callback(
     [
         Output("metronome-button", "children"),
@@ -112,6 +133,7 @@ def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name):
         Output("mixer-sound", "src"),
 
         Output("current-move", "data", allow_duplicate=True),
+        Output("mixer-remaining", "data"),
     ],
     [
         Input("metronome-button", "n_clicks"),
@@ -123,14 +145,20 @@ def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name):
     [
         State("metronome-interval", "disabled"),
         State("mixer-button", "children"),
+        State("selected-moves", "data"),
+        State("mixer-remaining", "data"),
     ],
     prevent_initial_call=True
 )
-def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_intervals, metronome_is_disabled, mixer_button_name):
+def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_intervals, metronome_is_disabled, mixer_button_name, selected_moves_bools, mixer_remaining):
     ctx = dash.callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    metronome_button_text = metronome_interval = metronome_disabled = mixer_disabled = mixer_interval = move_file = current_move = dash.no_update
+    metronome_button_text = metronome_interval = metronome_disabled = mixer_disabled = mixer_interval = move_file = current_move = mixer_remaining_out = dash.no_update
+
+    if triggered_id in ("metronome-button", "metronome-bpm-input", "mixer-button", "mixer-count-interval"):
+        if not bpm or bpm <= 0:
+            bpm = 120
 
     match triggered_id:
         case "metronome-button":
@@ -150,16 +178,23 @@ def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_interv
             if mixer_button_name == mixer_btn_names["start"]:
                 mixer_disabled = False
                 mixer_interval = default_interval["ms"]/2
+                mixer_remaining_out = dance_moves.sequence_count
             else:
                 mixer_disabled = True
 
         case "mixer-count-interval":
-            new_move = dance_moves.get_move()
+            new_move, remaining_after, interval_ms = pick_next_move(
+                selected_moves_bools or [False] * len(dance_moves.moves),
+                mixer_remaining,
+                dance_moves,
+                bpm
+            )
             move_file = f"/assets/{new_move.name}.wav"
-            mixer_interval = new_move.counts * (60000 / bpm)
+            mixer_interval = interval_ms
             current_move = new_move.name
+            mixer_remaining_out = remaining_after
 
-    return metronome_button_text, metronome_interval, metronome_disabled, mixer_disabled, mixer_interval, move_file, current_move
+    return metronome_button_text, metronome_interval, metronome_disabled, mixer_disabled, mixer_interval, move_file, current_move, mixer_remaining_out
 
 
 app.clientside_callback(
