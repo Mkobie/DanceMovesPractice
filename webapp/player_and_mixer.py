@@ -2,8 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, callback
 
-from setup import dance_moves
-from setup import show_video_dropdown
+from setup import dance_moves, show_video_dropdown, bpm_limits, default_interval
 from webapp.mixer import mixer
 
 player = html.Video(id="video-player",
@@ -49,3 +48,14 @@ def update_dropdown_label(n1, n2):
         return show_video_dropdown[True]
     else:
         return dash.no_update
+
+
+@callback(
+    Output("metronome-bpm-input", "value"),
+    Input("metronome-bpm-input", "value"),
+    prevent_initial_call=True,
+)
+def enforce_bpm_range(value):
+    if value is None:
+        return default_interval["bpm"]
+    return max(bpm_limits["min"], min(bpm_limits["max"], value))
