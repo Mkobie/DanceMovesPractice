@@ -1,11 +1,9 @@
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Union
 
 import gdown
 import pandas as pd
-
-# Debugging
-USE_LOCAL_EXCEL = True
 
 class DanceMove:
     def __init__(self, name, counts, lesson, grouping, selected=False):
@@ -18,17 +16,21 @@ class DanceMove:
     def __repr__(self):
         return f"DanceMove(name='{self.name}', counts='{self.counts}', lesson='{self.lesson}', grouping='{self.grouping}', selected='{self.selected}')"
 
-def download_excel_from_gdrive(gdrive_url, use_local_file=False):
-    output_file = 'data_from_gdrive.xlsx'
+def download_excel_from_gdrive(gdrive_url: str, cache_path: str = "data/catalog.xlsx", force_refresh: bool = False, ttl: timedelta | None = None) -> str:
+    cache = Path(cache_path)
+    cache.parent.mkdir(parents=True, exist_ok=True)
 
-    if use_local_file and Path(output_file).exists():
-        return output_file
+    if cache.exists() and not force_refresh:
+        if ttl is None:
+            return str(cache)
+        age = datetime.now(timezone.utc) - datetime.fromtimestamp(cache.stat().st_mtime, tz=timezone.utc)
+        if age <= ttl:
+            return str(cache)
 
     file_id = gdrive_url.split('/d/')[1].split('/')[0]
-    download_url = f'https://drive.google.com/uc?id={file_id}&export=download'
-    gdown.download(download_url, output_file, quiet=False)
-
-    return output_file
+    download_url = f"https://drive.google.com/uc?id={file_id}&export=download"
+    gdown.download(download_url, str(cache), quiet=False)
+    return str(cache)
 
 
 class DanceMoveCollection:
@@ -46,10 +48,6 @@ class DanceMoveCollection:
 
         if type(data) == pd.DataFrame:
             self.load_data(data)
-        elif type(data) == str:
-            self.load_from_excel(data)
-        else:
-            self.load_from_excel()
 
     def __getitem__(self, index) -> Union[DanceMove, None]:
         if self.moves:
@@ -62,20 +60,9 @@ class DanceMoveCollection:
 
     @classmethod
     def from_excel(cls, file_path: str, sheet_name: str):
-        inst = cls.__new__(cls)
-        DanceMoveCollection.__init__(inst, data=file_path)
-        inst.moves.clear()
-        inst.groups.clear()
-        inst.load_from_excel(file_path, sheet_name=sheet_name)
-        return inst
-
-    def load_from_excel(self, file_path=None, sheet_name=None):
-        file_path = download_excel_from_gdrive(file_path, USE_LOCAL_EXCEL)
-        with pd.ExcelFile(file_path) as xls:
-            chosen = sheet_name or xls.sheet_names[0]
-            df = pd.read_excel(xls, sheet_name=chosen)
-            df.name = chosen
-        self.load_data(df)
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
+        df.name = sheet_name
+        return cls(df)
 
     def load_data(self, data: pd.DataFrame):
         self._style = data.name

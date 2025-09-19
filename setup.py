@@ -1,4 +1,6 @@
-from backend.DanceMove import DanceMoveCollection
+from datetime import timedelta
+
+from backend.DanceMove import DanceMoveCollection, download_excel_from_gdrive
 
 mixer_btn_names = {"start": "Let's go!", "stop": "Aaand stop!"}
 show_video_dropdown = {False: "without video", True: "with video"}
@@ -12,9 +14,11 @@ assets_folder = 'assets'
 metronome_audio = "assets/Perc_MetronomeQuartz_hi.wav"
 
 EXCEL_PATH = "https://docs.google.com/spreadsheets/d/1aosvnSmsJQOGKC1ovB38PTfes1ZzHu73/edit?usp=sharing&ouid=111732102481483761509&rtpof=true&sd=true"
+LOCAL_EXCEL = download_excel_from_gdrive(EXCEL_PATH, ttl=timedelta(hours=6))
+
 STYLES = ["Salsa", "Blues"]
 CATALOGS = {
-    style: DanceMoveCollection.from_excel(EXCEL_PATH, style)
+    style: DanceMoveCollection.from_excel(LOCAL_EXCEL, style)
     for style in STYLES
 }
 DEFAULT_STYLE = STYLES[0]
