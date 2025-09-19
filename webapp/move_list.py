@@ -6,11 +6,16 @@ from setup import get_catalog, DEFAULT_STYLE, CUSTOM_MIXER_MOVES_LABEL
 
 
 def generate_move_button_row(move):
-    return html.Div([
-        dbc.Button(move.name, id={'type': 'move-button', 'index': f"{move.name}"}, color="secondary", className="flex-grow-1", n_clicks=0),
-        dbc.Button("\U0001F855", id={'type': 'lesson-button', 'index': f"{move.name}"}, href=f"{move.lesson}", target="_blank", style={'display': 'none'}, color="secondary", className="flex-shrink-1"),
-        dbc.Checkbox(id={'type': 'move-checkbox', 'index': f"{move.name}"}, style={'margin-left': '10px'}, value=False),
-    ], className="d-flex align-items-center mb-1 ms-4")
+    name_button = dbc.Button(move.name, id={'type': 'move-button', 'index': f"{move.name}"}, color="secondary", className="flex-grow-1", n_clicks=0)
+    checkbox = dbc.Checkbox(id={'type': 'move-checkbox', 'index': f"{move.name}"}, style={'margin-left': '10px'}, value=False)
+    components = [name_button, checkbox]
+
+    if move.lesson:
+        components.insert(1,
+                          dbc.Button("\U0001F855", id={'type': 'lesson-button', 'index': f"{move.name}"}, href=f"{move.lesson}", target="_blank", style={'display': 'none'}, color="secondary", className="flex-shrink-1")
+                          )
+
+    return html.Div(components, className="d-flex align-items-center mb-1 ms-4")
 
 def generate_column_of_move_button_rows(catalog, title):
     moves_for_column = [move for move in catalog.moves if move.grouping == title]
@@ -88,7 +93,7 @@ def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkb
                      else [False] * len(moves))
     mixer_moves_label = mixer_moves_label or CUSTOM_MIXER_MOVES_LABEL
 
-    if not tid or tid == "style":
+    if not tid or tid == "style" or tid == "move-list-body":
         dropdown_index = 0
         new_group_checkbox_values = [i <= dropdown_index for i in range(len(groups))]
         sel_groups = {groups[i] for i, v in enumerate(new_group_checkbox_values) if v}
