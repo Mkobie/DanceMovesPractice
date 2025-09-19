@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, callback
 
 from setup import show_video_dropdown, bpm_limits, default_interval, get_catalog, DEFAULT_STYLE
-from webapp.mixer import mixer
+from webapp.mixer import mixer_wrapper
 
 player = html.Video(id="video-player",
                     src=f"/assets/{DEFAULT_STYLE}/{get_catalog(DEFAULT_STYLE).moves[0].name}.mp4",
@@ -19,7 +19,7 @@ player_and_mixer = dbc.Card(
                             html.Div(
                                 [
                                     player,
-                                    mixer,
+                                    mixer_wrapper,
                                     dcc.Store(id="video-source"),
                                     dcc.Store(id="dummy"),
                                 ],
