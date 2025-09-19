@@ -92,12 +92,22 @@ def set_current_move(active_move_button):
         Input("current-move", "data"),
         Input("style", "data"),
         Input("move-list-body", "children"),
+    ],
+    [
+        State({'type': 'move-button', 'index': dash.dependencies.ALL}, 'id'),
+        State({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'id'),
     ]
 )
-def show_current_move_in_move_list(current_move, style, _children_ready):
-    catalog = get_catalog(style)
-    button_colors = [get_color_for_item(style, move.name == current_move) for move in catalog.moves]
-    href_visibility = [{'display': 'block'} if move.name == current_move else {'display': 'none'} for move in catalog.moves]
+def show_current_move_in_move_list(current_move, style, _children_ready, move_btn_ids, lesson_btn_ids):
+    button_colors = [
+        get_color_for_item(style, btn_id['index'] == current_move)
+        for btn_id in (move_btn_ids or [])
+    ]
+
+    href_visibility = [
+        {'display': 'block'} if btn_id['index'] == current_move else {'display': 'none'}
+        for btn_id in (lesson_btn_ids or [])
+    ]
 
     return button_colors, href_visibility
 
@@ -133,17 +143,21 @@ def show_current_move_in_video_player(current_move, style, mixer_disabled, show_
     [
         State("mixer-button", "children"),
         State("style", "data"),
+        State({'type': 'move-button', 'index': dash.dependencies.ALL}, 'id'),
+        State({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'id'),
     ],
     prevent_initial_call=True
 )
-def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name, style):
-    catalog = get_catalog(style)
+def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name, style, move_btn_ids, lesson_btn_ids):
+    n_moves = len(move_btn_ids or [])
+    n_lessons = len(lesson_btn_ids or [])
+
     if mixer_button_name == mixer_btn_names["start"]:
         # Start the mixer
-        return mixer_btn_names["stop"], get_color_for_item(style, True), False, [True] * len(catalog.moves), [True] * len(catalog.moves)
+        return mixer_btn_names["stop"], get_color_for_item(style, True), False, [True] * n_moves, [True] * n_lessons
     else:
         # Stop the mixer
-        return mixer_btn_names["start"], get_color_for_item(style, False), False, [False] * len(catalog.moves), [False] * len(catalog.moves)
+        return mixer_btn_names["start"], get_color_for_item(style, False), False, [False] * n_moves, [False] * n_lessons
 
 
 def pick_next_move(selected_bools, remaining, catalog: DanceMoveCollection, bpm):

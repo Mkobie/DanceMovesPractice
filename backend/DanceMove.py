@@ -83,7 +83,7 @@ class DanceMoveCollection:
             move = DanceMove(
                 name=row['Name'],
                 counts=row['Counts'],
-                lesson=row['Lesson'],
+                lesson=row["Lesson"] if "Lesson" in data.columns else None,
                 grouping=row['Grouping'],
             )
             self.moves.append(move)
