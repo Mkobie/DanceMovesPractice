@@ -51,16 +51,25 @@ def set_style(_n_clicks):
     return chosen
 
 
+def get_color_for_item(name: str, active: bool) -> str:
+    """Return the Bootstrap color for a given item when active/inactive."""
+    if not active:
+        return "secondary"
+
+    special_colors = {
+        "Salsa": "warning",
+        "Blues": "primary",
+    }
+    return special_colors.get(name, "secondary")
+
+
 @callback(
     Output({"type": "style-button", "index": ALL}, "color"),
     Input("style", "data"),
     prevent_initial_call=False,
 )
-def highlight_active_button(active_style):
-    return [
-        "secondary" if style == active_style else "primary"
-        for style in STYLES
-    ]
+def highlight_active_style_button(style):
+    return [get_color_for_item(style_options, style_options == style) for style_options in STYLES]
 
 
 @callback(
@@ -86,7 +95,7 @@ def set_current_move(active_move_button):
 )
 def show_current_move_in_move_list(current_move, style):
     catalog = get_catalog(style)
-    button_colors = ['primary' if move.name == current_move else 'secondary' for move in catalog.moves]
+    button_colors = [get_color_for_item(style, move.name == current_move) for move in catalog.moves]
     href_visibility = [{'display': 'block'} if move.name == current_move else {'display': 'none'} for move in catalog.moves]
 
     return button_colors, href_visibility
@@ -130,10 +139,10 @@ def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name, style):
     catalog = get_catalog(style)
     if mixer_button_name == mixer_btn_names["start"]:
         # Start the mixer
-        return mixer_btn_names["stop"], 'primary', False, [True] * len(catalog.moves), [True] * len(catalog.moves)
+        return mixer_btn_names["stop"], get_color_for_item(style, True), False, [True] * len(catalog.moves), [True] * len(catalog.moves)
     else:
         # Stop the mixer
-        return mixer_btn_names["start"], 'secondary', False, [False] * len(catalog.moves), [False] * len(catalog.moves)
+        return mixer_btn_names["start"], get_color_for_item(style, False), False, [False] * len(catalog.moves), [False] * len(catalog.moves)
 
 
 def pick_next_move(selected_bools, remaining, catalog: DanceMoveCollection, bpm):

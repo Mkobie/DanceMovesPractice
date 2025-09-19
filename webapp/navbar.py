@@ -15,7 +15,7 @@ navbar = dbc.Navbar(
                                 style,
                                 id={"type": "style-button", "index": style},
                                 size="md",
-                                color="primary",
+                                color="secondary",
                             )
                             for style in STYLES
                         ],
@@ -38,6 +38,6 @@ navbar = dbc.Navbar(
         ],
         fluid=True,
     ),
-    color="primary",
-    dark=True,
+    color="secondary",
+    dark=False,
 )
