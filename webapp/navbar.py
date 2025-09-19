@@ -25,16 +25,16 @@ navbar = dbc.Navbar(
                 ],
                 className="d-flex align-items-center",
             ),
-            # dbc.Nav(  # todo: add link to repo in future
-            #     dbc.NavItem(
-            #         dbc.NavLink(
-            #             "Contribute",
-            #             href="",
-            #             target="_blank"
-            #         )
-            #     ),
-            #     className="ms-auto",
-            # ),
+            dbc.Nav(
+                dbc.NavItem(
+                    dbc.NavLink(
+                        "Contribute",
+                        href="https://github.com/Mkobie/DanceMovesPractice",
+                        target="_blank"
+                    )
+                ),
+                className="ms-auto",
+            ),
         ],
         fluid=True,
     ),
