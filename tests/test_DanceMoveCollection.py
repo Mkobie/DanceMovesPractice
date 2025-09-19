@@ -43,7 +43,7 @@ class TestDanceMoveCollection(unittest.TestCase):
                           "Grouping": ['Basic turns', 'Basic turns', 'Ballroom blues', 'Close embrace']}).to_excel(
                 writer, sheet_name="Blues", index=False)
 
-        collection = DanceMoveCollection(str(temp_file))
+        collection = DanceMoveCollection.from_excel(str(temp_file), "Blues")
         self.assertEqual('Blues', collection.get_style_name())
         temp_file.unlink()
 
