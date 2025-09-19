@@ -16,7 +16,6 @@ player = html.Video(id="video-player",
 player_and_mixer = dbc.Card(
                     dbc.CardBody(
                         [
-                            html.H6("\u00A0", className="card-title"),
                             html.Div(
                                 [
                                     player,
