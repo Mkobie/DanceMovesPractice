@@ -64,13 +64,14 @@ def render_move_list(style):
         Input({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'value'),
         Input({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'value'),
         Input("style", "data"),
+        Input("move-list-body", "children"),
     ],
     [
         State("mixer-moves", "label"),
         State("group-checkbox-store", "data"),
     ],
 )
-def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkbox_values, style, mixer_moves_label, group_checkbox_previous_values):
+def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkbox_values, style, _children_ready, mixer_moves_label, group_checkbox_previous_values):
     ctx = dash.callback_context
     tid = ctx.triggered_id
 

@@ -91,9 +91,10 @@ def set_current_move(active_move_button):
     [
         Input("current-move", "data"),
         Input("style", "data"),
+        Input("move-list-body", "children"),
     ]
 )
-def show_current_move_in_move_list(current_move, style):
+def show_current_move_in_move_list(current_move, style, _children_ready):
     catalog = get_catalog(style)
     button_colors = [get_color_for_item(style, move.name == current_move) for move in catalog.moves]
     href_visibility = [{'display': 'block'} if move.name == current_move else {'display': 'none'} for move in catalog.moves]
