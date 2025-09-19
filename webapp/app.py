@@ -36,7 +36,7 @@ app.layout = html.Div([
 
 
 def run():
-    app.run_server(debug=True)
+    app.run(debug=True)
 
 
 @callback(
