@@ -61,3 +61,8 @@ mixer = dbc.Row(
                 ], className="mt-3",
 
             )
+
+mixer_wrapper = html.Div(
+    mixer,
+    id="mixer-wrapper",
+)

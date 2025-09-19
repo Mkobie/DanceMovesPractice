@@ -51,6 +51,16 @@ def set_style(_n_clicks):
     return chosen
 
 
+@callback(
+    Output("mixer-wrapper", "style"),
+    Input("style", "data"),
+)
+def hide_mixer_for_salsa(style):
+    if style == "Salsa":
+        return {"display": "none"}
+    return {"display": "block"}
+
+
 def get_color_for_item(name: str, active: bool) -> str:
     """Return the Bootstrap color for a given item when active/inactive."""
     if not active:
