@@ -1,10 +1,30 @@
 import dash_bootstrap_components as dbc
+from dash import html
+
+from setup import STYLES
 
 navbar = dbc.Navbar(
     dbc.Container(
         [
-            dbc.NavbarBrand("Blues Moves Practice", className="me-auto"),
-
+            html.Div(
+                [
+                    dbc.NavbarBrand("Dance Moves Practice:", className="me-2"),
+                    dbc.ButtonGroup(
+                        [
+                            dbc.Button(
+                                style,
+                                id={"type": "style-button", "index": style},
+                                size="md",
+                                color="primary",
+                            )
+                            for style in STYLES
+                        ],
+                        size="md",
+                        className="ms-2",
+                    ),
+                ],
+                className="d-flex align-items-center",
+            ),
             # dbc.Nav(  # todo: add link to repo in future
             #     dbc.NavItem(
             #         dbc.NavLink(

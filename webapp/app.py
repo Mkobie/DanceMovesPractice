@@ -1,11 +1,13 @@
+import json
 import random
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, callback, Input, Output, State, dcc
+from dash import html, callback, Input, Output, State, dcc, ctx, ALL
+from dash.exceptions import PreventUpdate
 
 from backend.DanceMove import DanceMoveCollection
-from setup import mixer_btn_names, show_video_dropdown, dance_moves, default_interval
+from setup import mixer_btn_names, show_video_dropdown, default_interval, get_catalog, DEFAULT_STYLE, STYLES
 from webapp.move_list import move_list
 from webapp.navbar import navbar
 from webapp.player_and_mixer import player_and_mixer
@@ -25,8 +27,9 @@ app.layout = html.Div([
         ])
     ], fluid=True),
 
-    dcc.Store(id="current-move", data=dance_moves.moves[0].name),
-    dcc.Store(id="selected-moves", data=[False]*len(dance_moves.moves), storage_type="session"),
+    dcc.Store(id="style", data=DEFAULT_STYLE, storage_type="session"),
+    dcc.Store(id="current-move", data=get_catalog(DEFAULT_STYLE).moves[0].name),
+    dcc.Store(id="selected-moves", data=[False]*len(get_catalog(DEFAULT_STYLE).moves), storage_type="session"),
     dcc.Store(id="mixer-remaining", data=None, storage_type="session"),
 ])
 
@@ -37,15 +40,38 @@ def run():
 
 
 @callback(
+    Output("style", "data"),
+    Input({"type": "style-button", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def set_style(_n_clicks):
+    if not ctx.triggered_id:
+        raise PreventUpdate
+    chosen = ctx.triggered_id["index"]
+    return chosen
+
+
+@callback(
+    Output({"type": "style-button", "index": ALL}, "color"),
+    Input("style", "data"),
+    prevent_initial_call=False,
+)
+def highlight_active_button(active_style):
+    return [
+        "secondary" if style == active_style else "primary"
+        for style in STYLES
+    ]
+
+
+@callback(
     Output("current-move", "data", allow_duplicate=True),
     Input({'type': 'move-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
 def set_current_move(active_move_button):
     ctx = dash.callback_context
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    clicked_move_name = eval(triggered_id)['index']
-    return clicked_move_name
+    triggered_id = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
+    return triggered_id['index']
 
 
 @callback(
@@ -53,26 +79,34 @@ def set_current_move(active_move_button):
         Output({'type': 'move-button', 'index': dash.dependencies.ALL}, 'color'),
         Output({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'style'),
     ],
-    Input("current-move", "data"),
+    [
+        Input("current-move", "data"),
+        Input("style", "data"),
+    ]
 )
-def show_current_move_in_move_list(current_move):
-    button_colors = ['primary' if move.name == current_move else 'secondary' for move in dance_moves.moves]
-    href_visibility = [{'display': 'block'} if move.name == current_move else {'display': 'none'} for move in dance_moves.moves]
+def show_current_move_in_move_list(current_move, style):
+    catalog = get_catalog(style)
+    button_colors = ['primary' if move.name == current_move else 'secondary' for move in catalog.moves]
+    href_visibility = [{'display': 'block'} if move.name == current_move else {'display': 'none'} for move in catalog.moves]
 
     return button_colors, href_visibility
 
 
 @callback(
     Output("video-source", "data"),
-    Input("current-move", "data"),
+    [
+        Input("current-move", "data"),
+        Input("style", "data"),
+    ],
     [
         State("mixer-count-interval", "disabled"),
         State("mixer-show-vid", "label"),
     ]
 )
-def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_vid):
+def show_current_move_in_video_player(current_move, style, mixer_disabled, show_mixer_vid):
     if mixer_disabled or (not mixer_disabled and show_mixer_vid == show_video_dropdown[1]):
-        return f"/assets/{current_move}.mp4"
+        asset_path = dash.get_app().get_asset_url(f"{style}/{current_move}.mp4")
+        return asset_path
     else:
         return dash.no_update
 
@@ -86,24 +120,20 @@ def show_current_move_in_video_player(current_move, mixer_disabled, show_mixer_v
         Output({'type': 'lesson-button', 'index': dash.dependencies.ALL}, 'disabled'),
     ],
     Input("mixer-button", "n_clicks"),
-    State("mixer-button", "children"),
+    [
+        State("mixer-button", "children"),
+        State("style", "data"),
+    ],
     prevent_initial_call=True
 )
-def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name):
+def manage_layout_on_mixer_button_press(n_clicks, mixer_button_name, style):
+    catalog = get_catalog(style)
     if mixer_button_name == mixer_btn_names["start"]:
         # Start the mixer
-        mixer_button_name = mixer_btn_names["stop"]
-        mixer_button_color = 'primary'
-        metronome_button_disabled = False
-        move_list_button_enable = [True for move in dance_moves.moves]
+        return mixer_btn_names["stop"], 'primary', False, [True] * len(catalog.moves), [True] * len(catalog.moves)
     else:
         # Stop the mixer
-        mixer_button_name = mixer_btn_names["start"]
-        mixer_button_color = 'secondary'
-        metronome_button_disabled = False
-        move_list_button_enable = [False for move in dance_moves.moves]
-
-    return mixer_button_name, mixer_button_color, metronome_button_disabled, move_list_button_enable, move_list_button_enable
+        return mixer_btn_names["start"], 'secondary', False, [False] * len(catalog.moves), [False] * len(catalog.moves)
 
 
 def pick_next_move(selected_bools, remaining, catalog: DanceMoveCollection, bpm):
@@ -141,6 +171,8 @@ def pick_next_move(selected_bools, remaining, catalog: DanceMoveCollection, bpm)
 
         Input("mixer-button", "n_clicks"),
         Input("mixer-count-interval", "n_intervals"),
+
+        Input("style", "data")
     ],
     [
         State("metronome-interval", "disabled"),
@@ -150,11 +182,12 @@ def pick_next_move(selected_bools, remaining, catalog: DanceMoveCollection, bpm)
     ],
     prevent_initial_call=True
 )
-def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_intervals, metronome_is_disabled, mixer_button_name, selected_moves_bools, mixer_remaining):
+def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_intervals, style, metronome_is_disabled, mixer_button_name, selected_moves_bools, mixer_remaining):
     ctx = dash.callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     metronome_button_text = metronome_interval = metronome_disabled = mixer_disabled = mixer_interval = move_file = current_move = mixer_remaining_out = dash.no_update
+    catalog = get_catalog(style)
 
     if triggered_id in ("metronome-button", "metronome-bpm-input", "mixer-button", "mixer-count-interval"):
         if not bpm or bpm <= 0:
@@ -178,18 +211,18 @@ def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_interv
             if mixer_button_name == mixer_btn_names["start"]:
                 mixer_disabled = False
                 mixer_interval = default_interval["ms"]/2
-                mixer_remaining_out = dance_moves.sequence_count
+                mixer_remaining_out = catalog.sequence_count
             else:
                 mixer_disabled = True
 
         case "mixer-count-interval":
             new_move, remaining_after, interval_ms = pick_next_move(
-                selected_moves_bools or [False] * len(dance_moves.moves),
+                selected_moves_bools or [False] * len(catalog.moves),
                 mixer_remaining,
-                dance_moves,
+                catalog,
                 bpm
             )
-            move_file = f"/assets/{new_move.name}.wav"
+            move_file = dash.get_app().get_asset_url(f"{style}/{new_move.name}.wav")
             mixer_interval = interval_ms
             current_move = new_move.name
             mixer_remaining_out = remaining_after
