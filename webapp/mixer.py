@@ -2,14 +2,14 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc
 
 from setup import bpm_limits, mixer_btn_names, default_interval, show_video_dropdown, \
-    metronome_audio, dance_moves
+    metronome_audio, get_catalog, DEFAULT_STYLE
 
 mixer_settings = dbc.InputGroup(
                             [
                                 dbc.InputGroupText("Practice up to"),
                                 dbc.DropdownMenu(
-                                        label=dance_moves.get_groups()[0], id="mixer-moves", color="secondary",
-                                        children=[dbc.DropdownMenuItem(title, id={'type': 'mixer-moves-dropdown-item', 'index': i}) for i, title in enumerate(dance_moves.get_groups())],
+                                        label=get_catalog(DEFAULT_STYLE).get_groups()[0], id="mixer-moves", color="secondary",
+                                        children=[dbc.DropdownMenuItem(title, id={'type': 'mixer-moves-dropdown-item', 'index': i}) for i, title in enumerate(get_catalog(DEFAULT_STYLE).get_groups())],
                                     ),
                                 dbc.InputGroupText("at"),
                                 dbc.Input(id="metronome-bpm-input", type="number", value=default_interval["bpm"], min=bpm_limits["min"], max=bpm_limits["max"], step=1, debounce=True),

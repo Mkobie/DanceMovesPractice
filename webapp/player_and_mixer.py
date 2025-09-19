@@ -2,11 +2,11 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, callback
 
-from setup import dance_moves, show_video_dropdown, bpm_limits, default_interval
+from setup import show_video_dropdown, bpm_limits, default_interval, get_catalog, DEFAULT_STYLE
 from webapp.mixer import mixer
 
 player = html.Video(id="video-player",
-                    src=f"assets/{dance_moves.moves[0].name}.mp4",
+                    src=f"/assets/{DEFAULT_STYLE}/{get_catalog(DEFAULT_STYLE).moves[0].name}.mp4",
                     controls=True,
                     autoPlay=True,
                     loop=True,
