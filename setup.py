@@ -15,7 +15,8 @@ assets_folder = 'assets'
 metronome_audio = "assets/Perc_MetronomeQuartz_hi.wav"
 
 EXCEL_PATH = os.environ["DANCE_MOVES_SHEET_URL"]
-LOCAL_EXCEL = download_excel_from_gdrive(EXCEL_PATH, ttl=timedelta(hours=6))
+LOCAL_EXCEL = download_excel_from_gdrive(EXCEL_PATH, ttl=timedelta(hours=6), force_refresh=False)
+
 STYLES = ["Salsa"]
 CATALOGS = {
     style: DanceMoveCollection.from_excel(LOCAL_EXCEL, style)
