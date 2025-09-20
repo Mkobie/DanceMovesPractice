@@ -7,7 +7,7 @@ from setup import get_catalog, DEFAULT_STYLE, CUSTOM_MIXER_MOVES_LABEL
 
 def generate_move_button_row(move):
     name_button = dbc.Button(move.name, id={'type': 'move-button', 'index': f"{move.move_id}"}, color="secondary", className="flex-grow-1", n_clicks=0)
-    checkbox = dbc.Checkbox(id={'type': 'move-checkbox', 'index': f"{move.move_id}"}, style={'margin-left': '10px'}, value=False)
+    checkbox = dbc.Checkbox(id={'type': 'move-checkbox', 'index': f"{move.move_id}"}, style={'margin-left': '10px'}, value=False, className="ms-2")
     components = [name_button, checkbox]
 
     if move.lesson:
