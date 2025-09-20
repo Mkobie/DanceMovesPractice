@@ -63,6 +63,8 @@ def render_move_list(style):
         Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'value'),
         Output("group-checkbox-store", "data"),
         Output("selected-moves", "data"),
+        Output({'type': 'group-checkbox', 'index': dash.dependencies.ALL}, 'style'),
+        Output({'type': 'move-checkbox', 'index': dash.dependencies.ALL}, 'style'),
     ],
     [
         Input({'type': 'mixer-moves-dropdown-item', 'index': dash.dependencies.ALL}, 'n_clicks'),
@@ -93,13 +95,17 @@ def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkb
                      else [False] * len(moves))
     mixer_moves_label = mixer_moves_label or CUSTOM_MIXER_MOVES_LABEL
 
+    hide = (style == "Salsa")
+    group_styles = ([{"display": "none"}] * len(groups)) if hide else ([{}] * len(groups))
+    move_styles = ([{"display": "none"}] * len(moves)) if hide else ([{}] * len(moves))
+
     if not tid or tid == "style" or tid == "move-list-body":
         dropdown_index = 0
         new_group_checkbox_values = [i <= dropdown_index for i in range(len(groups))]
         sel_groups = {groups[i] for i, v in enumerate(new_group_checkbox_values) if v}
         new_move_checkbox_values = [m.grouping in sel_groups for m in moves]
         mixer_moves_label = groups[0]
-        return mixer_moves_label, new_group_checkbox_values, new_move_checkbox_values, new_group_checkbox_values, new_move_checkbox_values
+        return mixer_moves_label, new_group_checkbox_values, new_move_checkbox_values, new_group_checkbox_values, new_move_checkbox_values, group_styles, move_styles
 
     if isinstance(tid, dict):
         trigger_source = tid.get("type")
@@ -135,4 +141,4 @@ def update_selected_move_checkboxes(n_clicks, group_checkbox_values, move_checkb
                 new_group_checkbox_values.append(all(new_move_checkbox_values[i] for i in idxs))
             mixer_moves_label = CUSTOM_MIXER_MOVES_LABEL
 
-    return mixer_moves_label, new_group_checkbox_values, new_move_checkbox_values, new_group_checkbox_values, new_move_checkbox_values
+    return mixer_moves_label, new_group_checkbox_values, new_move_checkbox_values, new_group_checkbox_values, new_move_checkbox_values, group_styles, move_styles
