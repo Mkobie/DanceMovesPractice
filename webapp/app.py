@@ -28,7 +28,7 @@ app.layout = html.Div([
     ], fluid=True),
 
     dcc.Store(id="style", data=DEFAULT_STYLE, storage_type="session"),
-    dcc.Store(id="current-move", data=get_catalog(DEFAULT_STYLE).moves[0].name),
+    dcc.Store(id="current-move", data=get_catalog(DEFAULT_STYLE).moves[0].move_id),
     dcc.Store(id="selected-moves", data=[False]*len(get_catalog(DEFAULT_STYLE).moves), storage_type="session"),
     dcc.Store(id="mixer-remaining", data=None, storage_type="session"),
 ])
@@ -256,9 +256,9 @@ def manage_mixer_and_metronome(metronome_n_clicks, bpm, mixer_n_clicks, n_interv
                 catalog,
                 bpm
             )
-            move_file = dash.get_app().get_asset_url(f"{style}/{new_move.name}.wav")
+            move_file = dash.get_app().get_asset_url(f"{style}/{new_move.move_id}.wav")
             mixer_interval = interval_ms
-            current_move = new_move.name
+            current_move = new_move.move_id
             mixer_remaining_out = remaining_after
 
     return metronome_button_text, metronome_interval, metronome_disabled, mixer_disabled, mixer_interval, move_file, current_move, mixer_remaining_out

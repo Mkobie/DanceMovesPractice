@@ -6,15 +6,16 @@ import gdown
 import pandas as pd
 
 class DanceMove:
-    def __init__(self, name, counts, lesson, grouping, selected=False):
+    def __init__(self, name, counts, lesson, grouping, move_id, selected=False):
         self.name = name
         self.counts = counts
         self.lesson = lesson
         self.grouping = grouping
+        self.move_id = move_id
         self.selected = selected
 
     def __repr__(self):
-        return f"DanceMove(name='{self.name}', counts='{self.counts}', lesson='{self.lesson}', grouping='{self.grouping}', selected='{self.selected}')"
+        return f"DanceMove(name='{self.name}', counts='{self.counts}', lesson='{self.lesson}', grouping='{self.grouping}', id={self.move_id}, selected='{self.selected}')"
 
 def download_excel_from_gdrive(gdrive_url: str, cache_path: str = "data/catalog.xlsx", force_refresh: bool = False, ttl: timedelta | None = None) -> str:
     cache = Path(cache_path)
@@ -42,7 +43,7 @@ class DanceMoveCollection:
         self._style = None
         self.moves = []
         self.groups = []
-        self._basic = DanceMove("Basic", 4, None, None)
+        self._basic = DanceMove("Basic", 4, None, None, None)
         self._sequence_count = 16
         self._remaining_counts = self._sequence_count
 
@@ -71,6 +72,7 @@ class DanceMoveCollection:
                 name=row['Name'],
                 counts=row['Counts'],
                 lesson=row["Lesson"] if "Lesson" in data.columns else None,
+                move_id=row["ID"],
                 grouping=row['Grouping'],
             )
             self.moves.append(move)

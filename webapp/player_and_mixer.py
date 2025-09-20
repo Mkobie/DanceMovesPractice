@@ -6,7 +6,7 @@ from setup import show_video_dropdown, bpm_limits, default_interval, get_catalog
 from webapp.mixer import mixer_wrapper
 
 player = html.Video(id="video-player",
-                    src=f"/assets/{DEFAULT_STYLE}/{get_catalog(DEFAULT_STYLE).moves[0].name}.mp4",
+                    src=f"/assets/{DEFAULT_STYLE}/{get_catalog(DEFAULT_STYLE).moves[0].move_id}.mp4",
                     controls=True,
                     autoPlay=True,
                     loop=True,
