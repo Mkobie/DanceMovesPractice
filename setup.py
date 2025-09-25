@@ -16,7 +16,7 @@ metronome_audio = "assets/Perc_MetronomeQuartz_hi.wav"
 EXCEL_PATH = "https://docs.google.com/spreadsheets/d/1aosvnSmsJQOGKC1ovB38PTfes1ZzHu73/edit?usp=sharing&ouid=111732102481483761509&rtpof=true&sd=true"
 LOCAL_EXCEL = download_excel_from_gdrive(EXCEL_PATH, ttl=timedelta(hours=6), force_refresh=False)
 
-STYLES = ["Salsa"]
+STYLES = ["Salsa", "Blues"]
 CATALOGS = {
     style: DanceMoveCollection.from_excel(LOCAL_EXCEL, style)
     for style in STYLES
